@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# Voice Daemon Control Script
+
+SERVICE_NAME="voice-daemon"
+
+case "$1" in
+    start)
+        echo "Starting voice daemon..."
+        systemctl --user start "$SERVICE_NAME"
+        echo "✓ Voice daemon started"
+        echo "Press Ctrl+Alt+V to use voice input"
+        ;;
+    stop)
+        echo "Stopping voice daemon..."
+        systemctl --user stop "$SERVICE_NAME"
+        echo "✓ Voice daemon stopped"
+        ;;
+    restart)
+        echo "Restarting voice daemon..."
+        systemctl --user restart "$SERVICE_NAME"
+        echo "✓ Voice daemon restarted"
+        ;;
+    status)
+        systemctl --user status "$SERVICE_NAME"
+        ;;
+    logs)
+        journalctl --user -u "$SERVICE_NAME" -f
+        ;;
+    enable)
+        systemctl --user enable "$SERVICE_NAME"
+        echo "✓ Voice daemon will start automatically on login"
+        ;;
+    disable)
+        systemctl --user disable "$SERVICE_NAME"
+        echo "✓ Auto-start disabled"
+        ;;
+    test)
+        echo "Testing voice daemon (running in foreground)..."
+        echo "Press Ctrl+Alt+V to test voice input"
+        echo "Press Ctrl+C to exit test mode"
+        /usr/bin/python3 /home/fns/tools/voice-daemon.py -m small
+        ;;
+    *)
+        echo "Voice Daemon Control"
+        echo ""
+        echo "Usage: voice-ctl [command]"
+        echo ""
+        echo "Commands:"
+        echo "  start      - Start the voice daemon"
+        echo "  stop       - Stop the voice daemon"
+        echo "  restart    - Restart the voice daemon"
+        echo "  status     - Show daemon status"
+        echo "  logs       - Show daemon logs (follow mode)"
+        echo "  enable     - Enable auto-start on login"
+        echo "  disable    - Disable auto-start"
+        echo "  test       - Run daemon in foreground (test mode)"
+        echo ""
+        echo "Hotkey: Ctrl+Alt+V"
+        exit 1
+        ;;
+esac

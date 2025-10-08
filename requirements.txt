@@ -1,0 +1,13 @@
+# Whisper Voice Daemon - Python Dependencies
+
+# Speech Recognition (Whisper AI)
+faster-whisper>=1.0.0
+
+# Hotkey Management
+pynput>=1.7.6
+
+# Audio Processing
+pyaudio>=0.2.13
+
+# Optional: GPU acceleration (uncomment if you have CUDA)
+# torch>=2.0.0
