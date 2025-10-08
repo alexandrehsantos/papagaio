@@ -59,8 +59,8 @@ The installer performs the following tasks:
 
 **Ubuntu/Debian (.deb):**
 ```bash
-wget https://github.com/alexandrehsantos/whisper-voice-daemon/releases/latest/download/whisper-voice-daemon_1.0.1-1_all.deb
-sudo dpkg -i whisper-voice-daemon_1.0.1-1_all.deb
+wget https://github.com/alexandrehsantos/whisper-voice-daemon/releases/latest/download/whisper-voice-daemon.deb
+sudo dpkg -i whisper-voice-daemon.deb
 sudo apt install -f
 ```
 
