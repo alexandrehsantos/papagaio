@@ -65,6 +65,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- 🛑 Manual stop: Press hotkey again during recording to stop immediately
+- ❌ Cancel recording: Press ESC key to cancel recording without transcription
+- 🌍 Bilingual interface: Full English and Portuguese UI support
+- 🔤 Configurable language: Command-line argument to choose interface language
+
+### Changed
+- Improved user feedback during recording with manual control instructions
+- Enhanced notification messages to show available control options
+
+## [1.0.1] - 2025-10-08
+
+### Added
+- Manual stop feature: Press hotkey again to stop recording immediately
+- Cancel feature: Press ESC to cancel recording without transcription
+- Bilingual support: English and Portuguese interface languages
+- Language selection via `-l/--lang` command-line argument
+
+### Technical Details
+- Added state management flags for manual control
+- Implemented ESC key listener during recording
+- Enhanced hotkey handler to toggle between start/stop
+- Thread-safe flag-based communication between listeners and recording thread
+
+---
+
+## [1.0.0] - 2025-10-08 (Previous Release)
+
 ### Planned Features
 - [ ] GUI configuration tool
 - [ ] Multiple language profiles

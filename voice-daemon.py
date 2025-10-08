@@ -34,16 +34,68 @@ MIN_VALID_TRANSCRIPTION_LENGTH = 3
 TYPING_DELAY_SECONDS = 0.3
 MIN_RECORDING_DURATION_SECONDS = 0.5
 
+# Multilingual messages
+MESSAGES = {
+    "en": {
+        "speak_now": "🎤 Speak now...",
+        "press_again_to_stop": "Press {hotkey} again to stop, or ESC to cancel",
+        "manually_stopped": "🛑 Manually stopped",
+        "cancelled": "❌ Recording cancelled",
+        "silence_detected": "Silence detected after",
+        "max_time_reached": "Maximum time reached",
+        "recorded": "Recorded",
+        "transcribed": "📝 Transcribed",
+        "no_speech": "⚠️  No speech detected",
+        "no_audio": "⚠️  No audio recorded",
+        "started": "🎙️  Voice Input Daemon Started (VAD Mode)",
+        "mode": "Mode: Silence detection (stops when you stop talking)",
+        "silence_threshold": "Silence threshold: 5.0 seconds",
+        "max_duration": "Maximum duration: 1 HOUR continuous recording",
+        "buffer": "Buffer: 8192 chunks (optimized for 64GB RAM)",
+        "press_hotkey": "Press hotkey and SPEAK - stops automatically after 5s silence",
+        "press_hotkey_manual": "Press hotkey again to stop manually, or ESC to cancel",
+        "speak_duration": "You can speak for up to 1 HOUR continuously!",
+        "press_ctrl_c": "Press Ctrl+C to stop the daemon",
+        "notification_ready": "Press {hotkey} and speak - stops when you stop talking"
+    },
+    "pt": {
+        "speak_now": "🎤 Fale agora...",
+        "press_again_to_stop": "Pressione {hotkey} novamente para parar, ou ESC para cancelar",
+        "manually_stopped": "🛑 Parado manualmente",
+        "cancelled": "❌ Gravação cancelada",
+        "silence_detected": "Silêncio detectado após",
+        "max_time_reached": "Tempo máximo atingido",
+        "recorded": "Gravado",
+        "transcribed": "📝 Transcrito",
+        "no_speech": "⚠️  Nenhuma fala detectada",
+        "no_audio": "⚠️  Sem áudio gravado",
+        "started": "🎙️  Daemon de Voz Iniciado (Modo VAD)",
+        "mode": "Modo: Detecção de silêncio (para quando você parar de falar)",
+        "silence_threshold": "Limite de silêncio: 5.0 segundos",
+        "max_duration": "Duração máxima: 1 HORA de gravação contínua",
+        "buffer": "Buffer: 8192 chunks (otimizado para 64GB RAM)",
+        "press_hotkey": "Pressione o atalho e FALE - para automaticamente após 5s de silêncio",
+        "press_hotkey_manual": "Pressione o atalho novamente para parar manualmente, ou ESC para cancelar",
+        "speak_duration": "Você pode falar por até 1 HORA continuamente!",
+        "press_ctrl_c": "Pressione Ctrl+C para parar o daemon",
+        "notification_ready": "Pressione {hotkey} e fale - para quando você parar de falar"
+    }
+}
+
 
 class VoiceDaemon:
-    def __init__(self, model_size="small", hotkey="<ctrl>+<alt>+v", use_ydotool=False, model_cache_dir=None):
+    def __init__(self, model_size="small", hotkey="<ctrl>+<alt>+v", use_ydotool=False, model_cache_dir=None, lang="en"):
         self.model_size = model_size
         self.hotkey = hotkey
         self.use_ydotool = use_ydotool
         self.model_cache_dir = model_cache_dir or "/mnt/development/.whisper-cache"
+        self.lang = lang if lang in MESSAGES else "en"
         self.model = None
         self.is_recording = False
+        self.stop_recording_flag = False  # For manual stop (hotkey pressed again)
+        self.cancel_recording_flag = False  # For ESC key
         self.recording_thread = None
+        self.esc_listener = None
         self.pid_file = "/tmp/voice-daemon.pid"
 
         # Audio settings for VAD
@@ -54,6 +106,10 @@ class VoiceDaemon:
         self.SILENCE_THRESHOLD = SILENCE_THRESHOLD_RMS
         self.SILENCE_DURATION = SILENCE_DURATION_SECONDS
         self.MAX_RECORDING_TIME = MAX_RECORDING_DURATION_SECONDS
+
+    def msg(self, key):
+        """Get translated message"""
+        return MESSAGES[self.lang].get(key, MESSAGES["en"].get(key, key))
 
     def initialize_model(self):
         if self.model is None:
@@ -97,8 +153,9 @@ class VoiceDaemon:
                 frames_per_buffer=self.CHUNK
             )
 
-            print("[Voice Daemon] 🎤 Fale agora...")
-            self.show_notification("Voice Input", "🎤 Fale agora...", "low")
+            print(f"[Voice Daemon] {self.msg('speak_now')}")
+            print(f"[Voice Daemon] {self.msg('press_hotkey_manual')}")
+            self.show_notification("Voice Input", self.msg("speak_now") + "\n" + self.msg("press_again_to_stop").format(hotkey=self.hotkey), "low")
 
             frames = []
             silence_chunks = 0
@@ -108,6 +165,16 @@ class VoiceDaemon:
 
             try:
                 while True:
+                    # Check for manual stop or cancel flags
+                    if self.cancel_recording_flag:
+                        print(f"\n[Voice Daemon] {self.msg('cancelled')}")
+                        self.show_notification("Voice Input", self.msg("cancelled"), "normal")
+                        return None
+
+                    if self.stop_recording_flag:
+                        print(f"\n[Voice Daemon] {self.msg('manually_stopped')}")
+                        break
+
                     data = stream.read(self.CHUNK, exception_on_overflow=False)
                     frames.append(data)
 
@@ -123,12 +190,12 @@ class VoiceDaemon:
 
                     if started_speaking and silence_chunks > max_silence_chunks:
                         if len(frames) > min_recording_chunks:
-                            print(f"\n[Voice Daemon] Silêncio detectado após {self.SILENCE_DURATION}s")
+                            print(f"\n[Voice Daemon] {self.msg('silence_detected')} {self.SILENCE_DURATION}s")
                             break
 
                     # Check max recording time
                     if len(frames) > int(self.MAX_RECORDING_TIME * self.RATE / self.CHUNK):
-                        print(f"\n[Voice Daemon] Tempo máximo atingido ({self.MAX_RECORDING_TIME}s)")
+                        print(f"\n[Voice Daemon] {self.msg('max_time_reached')} ({self.MAX_RECORDING_TIME}s)")
                         break
 
             except KeyboardInterrupt:
@@ -153,7 +220,7 @@ class VoiceDaemon:
             wf.writeframes(b''.join(frames))
 
         duration = len(frames) * self.CHUNK / self.RATE
-        print(f"[Voice Daemon] Gravado: {duration:.1f}s")
+        print(f"[Voice Daemon] {self.msg('recorded')}: {duration:.1f}s")
 
         return output_file
 
@@ -251,16 +318,44 @@ class VoiceDaemon:
             # Notifications are non-critical, silently continue
             pass
 
+    def start_esc_listener(self):
+        """Start ESC key listener for cancelling recording"""
+        def on_press(key):
+            try:
+                if key == keyboard.Key.esc and self.is_recording:
+                    self.cancel_recording_flag = True
+                    return False  # Stop listener
+            except AttributeError:
+                pass
+
+        self.esc_listener = keyboard.Listener(on_press=on_press)
+        self.esc_listener.start()
+
+    def stop_esc_listener(self):
+        """Stop ESC key listener"""
+        if self.esc_listener:
+            self.esc_listener.stop()
+            self.esc_listener = None
+
     def process_voice_input(self):
         """Process voice input in a separate thread"""
         if self.is_recording:
             return
 
         self.is_recording = True
+        # Reset flags for new recording session
+        self.stop_recording_flag = False
+        self.cancel_recording_flag = False
 
         def record_and_transcribe():
             try:
+                # Start ESC listener
+                self.start_esc_listener()
+
                 audio_file = self.record_audio()
+
+                # Stop ESC listener
+                self.stop_esc_listener()
 
                 if audio_file:
                     print("[Voice Daemon] 🔄 Transcribing...")
@@ -270,29 +365,39 @@ class VoiceDaemon:
                     os.unlink(audio_file)
 
                     if text and len(text) > MIN_VALID_TRANSCRIPTION_LENGTH:
-                        print(f"[Voice Daemon] 📝 Transcribed: {text}")
+                        print(f"[Voice Daemon] {self.msg('transcribed')}: {text}")
                         self.type_text(text)
                         self.show_notification("Voice Input", f"✓ {text[:50]}", "normal")
                     else:
-                        print("[Voice Daemon] ⚠️  Nenhuma fala detectada")
-                        self.show_notification("Voice Input", "⚠️ Nenhuma fala detectada", "normal")
+                        print(f"[Voice Daemon] {self.msg('no_speech')}")
+                        self.show_notification("Voice Input", self.msg("no_speech"), "normal")
                 else:
-                    print("[Voice Daemon] ⚠️  Sem áudio gravado")
-                    self.show_notification("Voice Input", "⚠️ Nenhuma fala detectada", "normal")
+                    print(f"[Voice Daemon] {self.msg('no_audio')}")
+                    self.show_notification("Voice Input", self.msg("no_speech"), "normal")
 
             except Exception as e:
                 print(f"[Voice Daemon] ✗ Error: {e}")
                 self.show_notification("Voice Input", f"✗ Error: {str(e)}", "critical")
             finally:
+                self.stop_esc_listener()
                 self.is_recording = False
+                # Reset flags
+                self.stop_recording_flag = False
+                self.cancel_recording_flag = False
 
         self.recording_thread = threading.Thread(target=record_and_transcribe)
         self.recording_thread.start()
 
     def on_activate(self):
         """Called when hotkey is pressed"""
-        print(f"[Voice Daemon] Hotkey triggered!")
-        self.process_voice_input()
+        if self.is_recording:
+            # Hotkey pressed again while recording - stop manually
+            print(f"[Voice Daemon] Hotkey pressed again - stopping recording...")
+            self.stop_recording_flag = True
+        else:
+            # Start new recording
+            print(f"[Voice Daemon] Hotkey triggered!")
+            self.process_voice_input()
 
     def write_pid(self):
         """Write PID to file with exclusive lock to prevent multiple instances"""
@@ -332,27 +437,28 @@ class VoiceDaemon:
             tool_name = "xdotool (X11)"
 
         print("=" * 60)
-        print("🎙️  Voice Input Daemon Started (VAD Mode)")
+        print(self.msg("started"))
         print("=" * 60)
         print(f"Hotkey: {self.hotkey}")
         print(f"Model: Whisper {self.model_size}")
+        print(f"Language: {self.lang}")
         print(f"Typing tool: {tool_name}")
-        print(f"Mode: Detecção de silêncio (para quando você parar)")
-        print(f"Silêncio: 5.0 segundos")
-        print(f"Máximo: 1 HORA de gravação contínua")
-        print(f"Buffer: 8192 chunks (otimizado para 64GB RAM)")
+        print(self.msg("mode"))
+        print(self.msg("silence_threshold"))
+        print(self.msg("max_duration"))
+        print(self.msg("buffer"))
         print(f"PID: {os.getpid()}")
         print("=" * 60)
-        print("\nPressione hotkey e FALE - para automaticamente após 5s de silêncio")
-        print("Você pode falar por ATÉ 1 HORA continuamente!")
-        print("Press Ctrl+C to stop the daemon\n")
+        print(f"\n{self.msg('press_hotkey')}")
+        print(self.msg("speak_duration"))
+        print(f"{self.msg('press_ctrl_c')}\n")
 
         # Initialize model on startup
         self.initialize_model()
 
         self.show_notification(
             "Voice Daemon (VAD)",
-            f"✓ Pressione {self.hotkey} e fale - para quando você parar de falar",
+            f"✓ {self.msg('notification_ready').format(hotkey=self.hotkey)}",
             "normal"
         )
 
@@ -389,10 +495,16 @@ def main():
         action="store_true",
         help="Force use of ydotool instead of xdotool"
     )
+    parser.add_argument(
+        "-l", "--lang",
+        default="en",
+        choices=["en", "pt"],
+        help="Interface language (default: en - English, pt - Portuguese)"
+    )
 
     args = parser.parse_args()
 
-    daemon = VoiceDaemon(model_size=args.model, hotkey=args.hotkey, use_ydotool=args.ydotool)
+    daemon = VoiceDaemon(model_size=args.model, hotkey=args.hotkey, use_ydotool=args.ydotool, lang=args.lang)
 
     # Handle signals
     def signal_handler(sig, frame):

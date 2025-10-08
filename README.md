@@ -10,13 +10,15 @@ A lightweight, privacy-focused voice input system that runs as a background serv
 ## ✨ Features
 
 - 🎯 **Global Hotkey** - Press `Ctrl+Alt+V` from anywhere to start voice input
+- 🛑 **Manual Control** - Press hotkey again to stop recording immediately, or ESC to cancel
 - 🔒 **100% Local Processing** - All transcription happens on your machine (privacy-first)
 - 🎤 **Voice Activity Detection (VAD)** - Automatically stops recording after 5 seconds of silence
 - ⚡ **Fast & Accurate** - Uses Faster-Whisper (optimized Whisper implementation)
 - 🔄 **Systemd Integration** - Runs as a user service, auto-starts on login
 - 💬 **Desktop Notifications** - Visual feedback during recording and transcription
 - 🖥️ **Works Everywhere** - Terminal, browser, IDE, any application
-- 🌍 **Multi-language** - Supports Portuguese (default) and other languages
+- 🌍 **Bilingual Interface** - English and Portuguese UI support
+- 🗣️ **Multi-language Speech** - Transcribe in any language Whisper supports
 
 ## 📦 Installation
 
@@ -93,7 +95,10 @@ voice-ctl test
 
 2. **Press the hotkey** (`Ctrl+Alt+V`) in any application
 
-3. **Speak clearly** - The daemon will record until you stop talking (5s silence)
+3. **Speak clearly** - You have three ways to stop recording:
+   - **Automatic:** Stop talking for 5 seconds (VAD auto-stop)
+   - **Manual:** Press `Ctrl+Alt+V` again to stop immediately
+   - **Cancel:** Press `ESC` to cancel (no transcription)
 
 4. **Text is typed automatically** - The transcribed text appears where your cursor is
 
@@ -111,6 +116,20 @@ vim document.txt
 ```
 
 ## ⚙️ Configuration
+
+### Change Language
+
+The daemon supports both English and Portuguese interfaces:
+
+```bash
+# English (default)
+voice-daemon.py -m small -l en
+
+# Portuguese
+voice-daemon.py -m small -l pt
+```
+
+To change permanently, edit the systemd service file (see below).
 
 ### Change Hotkey
 
@@ -215,8 +234,11 @@ MAX_RECORDING_DURATION_SECONDS = 3600  # Max 1 hour recording
 2. **Hotkey listener** waits for `Ctrl+Alt+V`
 3. **Recording begins** when hotkey is pressed
 4. **VAD monitors** audio volume (RMS threshold)
-5. **Stops automatically** after 5 seconds of silence
-6. **Whisper transcribes** the audio file
+5. **Stops recording** when:
+   - 5 seconds of silence detected (automatic)
+   - Hotkey pressed again (manual stop)
+   - ESC key pressed (cancel - no transcription)
+6. **Whisper transcribes** the audio file (if not cancelled)
 7. **Text is typed** using xdotool/ydotool
 8. **Notification shows** the transcribed text
 
