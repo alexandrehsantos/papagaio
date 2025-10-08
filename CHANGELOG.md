@@ -10,21 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Initial Release
 
 #### Added
-- 🎯 Global hotkey support (Ctrl+Alt+V)
-- 🎤 Voice Activity Detection (VAD) with automatic silence detection
-- ⚡ Faster-Whisper integration for speech recognition
-- 🔄 Systemd user service integration
-- 💬 Desktop notifications for visual feedback
-- 🖥️ Multi-backend keyboard simulation (xdotool, ydotool, xclip)
-- 📝 Comprehensive documentation
-- 🛠️ Installation script and control utility
-- 🔒 PID file locking to prevent multiple instances
-- 🧵 Non-blocking threaded recording and transcription
-- 🌍 Portuguese language support (configurable for others)
-- ⚙️ Configurable Whisper models (tiny, base, small, medium)
-- 📊 Real-time audio level monitoring (RMS-based VAD)
-- ⏱️ Configurable silence threshold and duration
-- 🚀 Auto-start on login capability
+- Global hotkey support (Ctrl+Alt+V)
+- Voice Activity Detection (VAD) with automatic silence detection
+- Faster-Whisper integration for speech recognition
+- Systemd user service integration
+- Desktop notifications for visual feedback
+- Multi-backend keyboard simulation (xdotool, ydotool, xclip)
+- Comprehensive documentation
+- Installation script and control utility
+- PID file locking to prevent multiple instances
+- Non-blocking threaded recording and transcription
+- Portuguese language support (configurable for others)
+- Configurable Whisper models (tiny, base, small, medium)
+- Real-time audio level monitoring (RMS-based VAD)
+- Configurable silence threshold and duration
+- Auto-start on login capability
 
 #### Features
 - Maximum recording duration: 1 hour
@@ -72,16 +72,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] - 2025-10-08
 
-### Added - Professional Packaging & Distribution
-- 📦 PyPI package support (`pip install whisper-voice-daemon`)
-- 🏗️ Debian package (.deb) with full debian/ structure
-- 🎯 AUR PKGBUILD for Arch Linux
-- 🛠️ Professional installer with distro detection
-- 🗑️ Complete uninstaller script
-- ⚙️ Configuration file support (~/.config/voice-daemon/config.ini)
-- 🔧 Enhanced voice-ctl with new commands (config, edit, version, help)
-- 📊 Makefile for easy building
-- 📝 Publishing guide (docs/PUBLISHING.md)
+### Added - Packaging & Distribution
+- PyPI package support (`pip install whisper-voice-daemon`)
+- Debian package (.deb) with full debian/ structure
+- AUR PKGBUILD for Arch Linux
+- Installer with distro detection
+- Uninstaller script
+- Configuration file support (~/.config/voice-daemon/config.ini)
+- Enhanced voice-ctl with new commands (config, edit, version, help)
+- Makefile for building
+- Publishing guide (docs/PUBLISHING.md)
 
 ### Changed
 - Installer now interactive with language/model/hotkey selection

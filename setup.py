@@ -19,7 +19,7 @@ setup(
     version="1.0.1",
     author="Alexandre Santos",
     author_email="alexandrehsantos@example.com",
-    description="Voice-to-text daemon for Linux using OpenAI Whisper",
+    description="Voice-to-text daemon for Linux using Whisper speech recognition",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/alexandrehsantos/whisper-voice-daemon",

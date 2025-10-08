@@ -2,17 +2,16 @@
 
 This guide explains how to publish Whisper Voice Daemon to various package repositories.
 
-## 📦 Package Distribution Methods
+## Package Distribution Methods
 
-### 1. PyPI (Python Package Index) - **RECOMMENDED FIRST**
+### 1. PyPI (Python Package Index)
 
-**Benefits:**
-- Works on ALL Linux distributions
-- Easy to install: `pip install whisper-voice-daemon`
+Recommended as the first distribution method.
+
+- Works on all Linux distributions
+- Installation: `pip install whisper-voice-daemon`
 - Automatic dependency management
 - No approval required
-
-**Steps:**
 
 1. **Create PyPI account:**
    - Production: https://pypi.org/account/register/
@@ -49,12 +48,10 @@ pip install whisper-voice-daemon
 
 ### 2. AUR (Arch User Repository)
 
-**Benefits:**
-- Very popular among Arch/Manjaro users
+- Popular among Arch/Manjaro users
 - Community-maintained after initial upload
 - Easy updates
 
-**Steps:**
 
 1. **Create AUR account:**
    - https://aur.archlinux.org/register/
@@ -100,12 +97,10 @@ paru -S whisper-voice-daemon
 
 ### 3. Ubuntu PPA (Personal Package Archive)
 
-**Benefits:**
 - Native `apt install` support
 - Automatic updates via apt
 - Popular among Ubuntu/Debian users
 
-**Steps:**
 
 1. **Create Launchpad account:**
    - https://launchpad.net/
@@ -146,11 +141,9 @@ sudo apt install whisper-voice-daemon
 
 ### 4. Debian Package (.deb) - Direct Download
 
-**Benefits:**
 - Works on Debian/Ubuntu without PPA
 - Can be hosted on GitHub Releases
 
-**Steps:**
 
 1. **Build package:**
    ```bash
@@ -180,12 +173,10 @@ sudo apt install -f  # Fix dependencies
 
 ### 5. Snapcraft (Universal Package)
 
-**Benefits:**
-- Works on ALL Linux distributions
+- Works on all Linux distributions
 - Automatic updates
 - Sandboxed
 
-**Steps:**
 
 1. **Create snapcraft.yaml:**
    ```yaml
@@ -193,7 +184,7 @@ sudo apt install -f  # Fix dependencies
    version: '1.0.1'
    summary: Voice-to-text daemon
    description: |
-     Professional voice input system for Linux
+     Voice input system for Linux
    ```
 
 2. **Build and publish:**
@@ -211,11 +202,9 @@ snap install whisper-voice-daemon
 
 ### 6. Flatpak (Universal Package)
 
-**Benefits:**
-- Works on ALL Linux distributions
+- Works on all Linux distributions
 - Sandboxed applications
 
-**Steps:**
 
 1. **Create Flatpak manifest**
 2. **Submit to Flathub**

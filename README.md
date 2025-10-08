@@ -1,45 +1,44 @@
 # Whisper Voice Daemon
 
-> 🎙️ **Professional voice-to-text daemon for Linux with global hotkey support**
-
-A lightweight, privacy-focused voice input system that runs as a background service and transcribes speech to text using OpenAI's Whisper model. Press a hotkey anywhere on your system to dictate text directly into any application.
+Voice-to-text daemon for Linux with global hotkey support. Runs as a background service and transcribes speech to text using OpenAI's Whisper model via the Faster-Whisper implementation.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
-## ✨ Features
+## Features
 
-- 🎯 **Global Hotkey** - Press `Ctrl+Alt+V` from anywhere to start voice input
-- 🛑 **Manual Control** - Press hotkey again to stop recording immediately, or ESC to cancel
-- 🔒 **100% Local Processing** - All transcription happens on your machine (privacy-first)
-- 🎤 **Voice Activity Detection (VAD)** - Automatically stops recording after 5 seconds of silence
-- ⚡ **Fast & Accurate** - Uses Faster-Whisper (optimized Whisper implementation)
-- 🔄 **Systemd Integration** - Runs as a user service, auto-starts on login
-- 💬 **Desktop Notifications** - Visual feedback during recording and transcription
-- 🖥️ **Works Everywhere** - Terminal, browser, IDE, any application
-- 🌍 **Bilingual Interface** - English and Portuguese UI support
-- 🗣️ **Multi-language Speech** - Transcribe in any language Whisper supports
+- Global hotkey activation (default: Ctrl+Alt+V)
+- Manual control: stop recording by pressing hotkey again, or cancel with ESC
+- Local processing only (no cloud services)
+- Voice Activity Detection (VAD) with automatic silence detection (5s threshold)
+- Systemd integration with user-level service
+- Desktop notifications for status feedback
+- Works with any application (terminal, browser, IDE, text editor)
+- Bilingual interface (English/Portuguese)
+- Multi-language speech transcription (any language supported by Whisper)
+- Multiple keyboard backends: xdotool (X11), ydotool (Wayland), xclip (fallback)
 
-## 📦 Installation
+## Installation
 
 ### System Requirements
-- Linux (Ubuntu, Debian, Fedora, Arch, openSUSE, etc.)
+
+- Linux distribution (Ubuntu, Debian, Fedora, Arch, openSUSE, or similar)
 - Python 3.8 or higher
 - Working microphone
-- 2GB+ free disk space (for Whisper model)
-- Internet connection (for first-time model download)
-
----
+- 2GB free disk space (for Whisper model download)
+- Internet connection (first-time setup only)
 
 ### Installation Methods
 
-#### 🐍 Method 1: PyPI (Recommended - Works on ALL distros)
+#### Method 1: PyPI
 
 ```bash
 pip install whisper-voice-daemon
 ```
 
-#### 📥 Method 2: From Source (Interactive Installer)
+Recommended for most users. Works on all Linux distributions.
+
+#### Method 2: From Source
 
 ```bash
 git clone https://github.com/alexandrehsantos/whisper-voice-daemon.git
@@ -47,20 +46,19 @@ cd whisper-voice-daemon
 ./install.sh
 ```
 
-**The installer will:**
-- ✅ Auto-detect your Linux distribution
-- ✅ Install system dependencies (xdotool, portaudio, python3-dev)
-- ✅ Install Python dependencies
-- ✅ Test your microphone
-- ✅ Interactive configuration (language, model, hotkey)
-- ✅ Setup systemd service
-- ✅ Add `voice-ctl` to PATH
+The installer performs the following tasks:
+- Detects Linux distribution
+- Installs system dependencies (xdotool, portaudio, python3-dev)
+- Installs Python dependencies
+- Tests microphone access
+- Prompts for configuration (language, model, hotkey)
+- Creates systemd user service
+- Adds voice-ctl to PATH
 
-#### 🏗️ Method 3: Distribution Packages
+#### Method 3: Distribution Packages
 
 **Ubuntu/Debian (.deb):**
 ```bash
-# Download from releases
 wget https://github.com/alexandrehsantos/whisper-voice-daemon/releases/latest/download/whisper-voice-daemon_1.0.1-1_all.deb
 sudo dpkg -i whisper-voice-daemon_1.0.1-1_all.deb
 sudo apt install -f
@@ -69,28 +67,24 @@ sudo apt install -f
 **Arch Linux (AUR):**
 ```bash
 yay -S whisper-voice-daemon
-# or
-paru -S whisper-voice-daemon
 ```
 
-**Ubuntu PPA** *(coming soon)*:
+**Ubuntu PPA (planned):**
 ```bash
 sudo add-apt-repository ppa:alexandrehsantos/whisper-voice-daemon
 sudo apt update
 sudo apt install whisper-voice-daemon
 ```
 
----
-
 ### Supported Distributions
 
-✅ Ubuntu / Debian / Linux Mint / Pop!_OS
-✅ Fedora / RHEL / CentOS
-✅ Arch Linux / Manjaro
-✅ openSUSE / SUSE
-✅ Any Linux with Python 3.8+
+- Ubuntu / Debian / Linux Mint / Pop!_OS
+- Fedora / RHEL / CentOS
+- Arch Linux / Manjaro
+- openSUSE / SUSE
+- Any Linux distribution with Python 3.8+
 
-## 🚀 Usage
+## Usage
 
 ### Basic Commands
 
@@ -156,7 +150,7 @@ vim document.txt
 # Text is automatically typed into vim!
 ```
 
-## 🗑️ Uninstallation
+## Uninstallation
 
 To completely remove Whisper Voice Daemon:
 
@@ -173,7 +167,7 @@ The uninstaller will:
 - Ask if you want to remove downloaded Whisper models
 - Optionally remove PATH entry from shell config
 
-## ⚙️ Configuration
+## Configuration
 
 ### Easy Configuration
 
@@ -233,7 +227,7 @@ voice-ctl edit
 voice-ctl restart
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 ### System Design
 
@@ -277,7 +271,7 @@ voice-ctl restart
 - **Worker Thread:** Audio recording + transcription
 - **Non-blocking:** UI doesn't freeze during processing
 
-## 📝 How It Works
+## How It Works
 
 1. **Daemon starts** and loads Whisper model into memory
 2. **Hotkey listener** waits for `Ctrl+Alt+V`
@@ -291,7 +285,7 @@ voice-ctl restart
 7. **Text is typed** using xdotool/ydotool
 8. **Notification shows** the transcribed text
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Service Won't Start
 
@@ -342,9 +336,9 @@ arecord -d 5 -f cd test.wav
 groups | grep audio
 ```
 
-## 🤝 Contributing
+## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome. Please submit pull requests or open issues on GitHub.
 
 ### Development Setup
 
@@ -367,32 +361,26 @@ python3 voice-daemon.py -m small
 - Write descriptive commit messages
 - Add tests for new features
 
-## 📜 License
+## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-- [OpenAI Whisper](https://github.com/openai/whisper) - Amazing speech recognition model
+- [OpenAI Whisper](https://github.com/openai/whisper) - Speech recognition model
 - [Faster-Whisper](https://github.com/guillaumekln/faster-whisper) - Optimized Whisper implementation
-- [pynput](https://github.com/moses-palmer/pynput) - Global hotkey support
+- [pynput](https://github.com/moses-palmer/pynput) - Global hotkey library
 
-## 📞 Support
+## Support
 
-- **Issues:** [GitHub Issues](https://github.com/YOUR_USERNAME/whisper-voice-daemon/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/YOUR_USERNAME/whisper-voice-daemon/discussions)
+- Issues: [GitHub Issues](https://github.com/alexandrehsantos/whisper-voice-daemon/issues)
+- Discussions: [GitHub Discussions](https://github.com/alexandrehsantos/whisper-voice-daemon/discussions)
 
-## 🗺️ Roadmap
+## Roadmap
 
-- [ ] GUI configuration tool
-- [ ] Multiple language support via config
-- [ ] Custom command triggers (e.g., "hey assistant")
-- [ ] Integration with popular text editors
-- [ ] macOS and Windows support
-- [ ] Voice commands for system control
-
----
-
-**Made with ❤️ for the Linux community**
-
-⭐ Star this repo if you find it useful!
+- GUI configuration tool
+- Multiple language support via config
+- Custom command triggers (e.g., "hey assistant")
+- Integration with popular text editors
+- macOS and Windows support
+- Voice commands for system control
