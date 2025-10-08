@@ -52,7 +52,7 @@ case "$1" in
         echo -e "${BOLD}Starting voice daemon...${NC}"
         if systemctl --user start "$SERVICE_NAME" 2>/dev/null; then
             print_success "Voice daemon started"
-            local hotkey=$(get_hotkey)
+            hotkey=$(get_hotkey)
             print_info "Press ${CYAN}$hotkey${NC} to use voice input"
             print_info "Use ${CYAN}voice-ctl status${NC} to check status"
         else
@@ -74,7 +74,7 @@ case "$1" in
         echo -e "${BOLD}Restarting voice daemon...${NC}"
         if systemctl --user restart "$SERVICE_NAME" 2>/dev/null; then
             print_success "Voice daemon restarted"
-            local hotkey=$(get_hotkey)
+            hotkey=$(get_hotkey)
             print_info "Press ${CYAN}$hotkey${NC} to use voice input"
         else
             print_error "Failed to restart daemon"
@@ -86,7 +86,7 @@ case "$1" in
         echo ""
         if systemctl --user is-active "$SERVICE_NAME" &>/dev/null; then
             print_success "Daemon is running"
-            local hotkey=$(get_hotkey)
+            hotkey=$(get_hotkey)
             print_info "Hotkey: ${CYAN}$hotkey${NC}"
         else
             print_warning "Daemon is not running"
@@ -127,7 +127,7 @@ case "$1" in
             exit 1
         fi
 
-        local hotkey=$(get_hotkey)
+        hotkey=$(get_hotkey)
         print_info "Press ${CYAN}$hotkey${NC} to test voice input"
         print_info "Stop recording: Wait 5s, press $hotkey again, or ESC"
         print_info "Exit test: ${CYAN}Ctrl+C${NC}"
@@ -159,7 +159,7 @@ case "$1" in
         ;;
     version)
         if [ -f "$DAEMON_SCRIPT" ]; then
-            local version=$(grep -m 1 "^# Version" "$DAEMON_SCRIPT" | cut -d' ' -f3 || echo "unknown")
+            version=$(grep -m 1 "^# Version" "$DAEMON_SCRIPT" | cut -d' ' -f3 || echo "unknown")
             echo "Whisper Voice Daemon v${version:-1.0.1}"
         else
             echo "Whisper Voice Daemon (not installed)"
@@ -192,7 +192,7 @@ case "$1" in
         echo ""
         echo -e "${BOLD}USAGE INSTRUCTIONS:${NC}"
         echo "  1. Start daemon: ${CYAN}voice-ctl start${NC}"
-        local hotkey=$(get_hotkey)
+        hotkey=$(get_hotkey)
         echo "  2. Press hotkey: ${YELLOW}$hotkey${NC}"
         echo "  3. Speak clearly"
         echo "  4. Stop recording:"
