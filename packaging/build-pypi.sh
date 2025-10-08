@@ -59,7 +59,7 @@ if [ "$MODE" = "test" ]; then
     echo "============================================"
     echo ""
     echo "Test installation:"
-    echo "  pip install --index-url https://test.pypi.org/simple/ whisper-voice-daemon"
+    echo "  pip install --index-url https://test.pypi.org/simple/ papagaio"
     echo ""
 
 elif [ "$MODE" = "prod" ]; then
@@ -80,7 +80,7 @@ elif [ "$MODE" = "prod" ]; then
         echo "============================================"
         echo ""
         echo "Users can now install with:"
-        echo "  pip install whisper-voice-daemon"
+        echo "  pip install papagaio"
         echo ""
     else
         echo "Upload cancelled."

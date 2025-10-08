@@ -3,7 +3,7 @@
 # Build and Upload to Ubuntu PPA
 # Usage: ./build-ppa.sh [ppa-name]
 #
-# Example: ./build-ppa.sh ppa:alexandrehsantos/whisper-voice-daemon
+# Example: ./build-ppa.sh ppa:alexandrehsantos/papagaio
 #
 
 set -e
@@ -24,7 +24,7 @@ if [ -z "$PPA_NAME" ]; then
     echo "Usage: $0 ppa:username/ppa-name"
     echo ""
     echo "Example:"
-    echo "  $0 ppa:alexandrehsantos/whisper-voice-daemon"
+    echo "  $0 ppa:alexandrehsantos/papagaio"
     echo ""
     exit 1
 fi
@@ -72,7 +72,7 @@ debuild -S -sa -k$GPG_KEY
 
 echo ""
 echo "[4/6] Verifying package..."
-CHANGES_FILE="../whisper-voice-daemon_${VERSION}-1ubuntu1_source.changes"
+CHANGES_FILE="../papagaio_${VERSION}-1ubuntu1_source.changes"
 
 if [ ! -f "$CHANGES_FILE" ]; then
     echo "ERROR: Changes file not found: $CHANGES_FILE"
@@ -111,5 +111,5 @@ echo ""
 echo "After build succeeds, users can install with:"
 echo "  sudo add-apt-repository $PPA_NAME"
 echo "  sudo apt update"
-echo "  sudo apt install whisper-voice-daemon"
+echo "  sudo apt install papagaio"
 echo ""

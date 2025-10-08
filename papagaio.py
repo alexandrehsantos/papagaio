@@ -116,8 +116,8 @@ class VoiceDaemon:
             # Create cache directory if it doesn't exist
             os.makedirs(self.model_cache_dir, exist_ok=True)
 
-            print(f"[Voice Daemon] Loading Whisper {self.model_size} model...")
-            print(f"[Voice Daemon] Cache dir: {self.model_cache_dir}")
+            print(f"[Papagaio] Loading Whisper {self.model_size} model...")
+            print(f"[Papagaio] Cache dir: {self.model_cache_dir}")
 
             self.model = WhisperModel(
                 self.model_size,
@@ -126,7 +126,7 @@ class VoiceDaemon:
                 num_workers=4,
                 download_root=self.model_cache_dir
             )
-            print(f"[Voice Daemon] ✓ Model loaded!")
+            print(f"[Papagaio] ✓ Model loaded!")
 
     def get_rms(self, data):
         """Calculate RMS (volume) of audio chunk"""
@@ -153,8 +153,8 @@ class VoiceDaemon:
                 frames_per_buffer=self.CHUNK
             )
 
-            print(f"[Voice Daemon] {self.msg('speak_now')}")
-            print(f"[Voice Daemon] {self.msg('press_hotkey_manual')}")
+            print(f"[Papagaio] {self.msg('speak_now')}")
+            print(f"[Papagaio] {self.msg('press_hotkey_manual')}")
             self.show_notification("Voice Input", self.msg("speak_now") + "\n" + self.msg("press_again_to_stop").format(hotkey=self.hotkey), "low")
 
             frames = []
@@ -167,12 +167,12 @@ class VoiceDaemon:
                 while True:
                     # Check for manual stop or cancel flags
                     if self.cancel_recording_flag:
-                        print(f"\n[Voice Daemon] {self.msg('cancelled')}")
+                        print(f"\n[Papagaio] {self.msg('cancelled')}")
                         self.show_notification("Voice Input", self.msg("cancelled"), "normal")
                         return None
 
                     if self.stop_recording_flag:
-                        print(f"\n[Voice Daemon] {self.msg('manually_stopped')}")
+                        print(f"\n[Papagaio] {self.msg('manually_stopped')}")
                         break
 
                     data = stream.read(self.CHUNK, exception_on_overflow=False)
@@ -190,12 +190,12 @@ class VoiceDaemon:
 
                     if started_speaking and silence_chunks > max_silence_chunks:
                         if len(frames) > min_recording_chunks:
-                            print(f"\n[Voice Daemon] {self.msg('silence_detected')} {self.SILENCE_DURATION}s")
+                            print(f"\n[Papagaio] {self.msg('silence_detected')} {self.SILENCE_DURATION}s")
                             break
 
                     # Check max recording time
                     if len(frames) > int(self.MAX_RECORDING_TIME * self.RATE / self.CHUNK):
-                        print(f"\n[Voice Daemon] {self.msg('max_time_reached')} ({self.MAX_RECORDING_TIME}s)")
+                        print(f"\n[Papagaio] {self.msg('max_time_reached')} ({self.MAX_RECORDING_TIME}s)")
                         break
 
             except KeyboardInterrupt:
@@ -220,7 +220,7 @@ class VoiceDaemon:
             wf.writeframes(b''.join(frames))
 
         duration = len(frames) * self.CHUNK / self.RATE
-        print(f"[Voice Daemon] {self.msg('recorded')}: {duration:.1f}s")
+        print(f"[Papagaio] {self.msg('recorded')}: {duration:.1f}s")
 
         return output_file
 
@@ -265,7 +265,7 @@ class VoiceDaemon:
             # Press Enter
             subprocess.run(["ydotool", "key", "28:1", "28:0"], check=True)
 
-            print(f"[Voice Daemon] ✓ Typed (ydotool): {text[:50]}...")
+            print(f"[Papagaio] ✓ Typed (ydotool): {text[:50]}...")
             return True
 
         except (subprocess.CalledProcessError, FileNotFoundError):
@@ -286,7 +286,7 @@ class VoiceDaemon:
 
             subprocess.run(["xdotool", "key", "Return"], check=True)
 
-            print(f"[Voice Daemon] ✓ Typed (xdotool): {text[:50]}...")
+            print(f"[Papagaio] ✓ Typed (xdotool): {text[:50]}...")
             return True
 
         except (subprocess.CalledProcessError, FileNotFoundError):
@@ -296,15 +296,15 @@ class VoiceDaemon:
         """Type text using available tool"""
         # Always try xdotool first (more reliable)
         if not self.type_text_xdotool(text):
-            print("[Voice Daemon] ⚠️  xdotool failed, trying ydotool")
+            print("[Papagaio] ⚠️  xdotool failed, trying ydotool")
             if not self.type_text_ydotool(text):
-                print("[Voice Daemon] ✗ Both xdotool and ydotool failed")
+                print("[Papagaio] ✗ Both xdotool and ydotool failed")
                 # Fallback: copy to clipboard
                 try:
                     subprocess.run(["xclip", "-selection", "clipboard"], input=text.encode(), check=True, timeout=5)
-                    print("[Voice Daemon] ✓ Copied to clipboard as fallback")
+                    print("[Papagaio] ✓ Copied to clipboard as fallback")
                 except (subprocess.SubprocessError, FileNotFoundError, OSError) as e:
-                    print(f"[Voice Daemon] ✗ All typing methods failed: {e}")
+                    print(f"[Papagaio] ✗ All typing methods failed: {e}")
 
     def show_notification(self, title, message, urgency="normal"):
         """Show desktop notification"""
@@ -358,25 +358,25 @@ class VoiceDaemon:
                 self.stop_esc_listener()
 
                 if audio_file:
-                    print("[Voice Daemon] 🔄 Transcribing...")
+                    print("[Papagaio] 🔄 Transcribing...")
                     self.show_notification("Voice Input", "🔄 Transcribing...", "low")
 
                     text = self.transcribe(audio_file)
                     os.unlink(audio_file)
 
                     if text and len(text) > MIN_VALID_TRANSCRIPTION_LENGTH:
-                        print(f"[Voice Daemon] {self.msg('transcribed')}: {text}")
+                        print(f"[Papagaio] {self.msg('transcribed')}: {text}")
                         self.type_text(text)
                         self.show_notification("Voice Input", f"✓ {text[:50]}", "normal")
                     else:
-                        print(f"[Voice Daemon] {self.msg('no_speech')}")
+                        print(f"[Papagaio] {self.msg('no_speech')}")
                         self.show_notification("Voice Input", self.msg("no_speech"), "normal")
                 else:
-                    print(f"[Voice Daemon] {self.msg('no_audio')}")
+                    print(f"[Papagaio] {self.msg('no_audio')}")
                     self.show_notification("Voice Input", self.msg("no_speech"), "normal")
 
             except Exception as e:
-                print(f"[Voice Daemon] ✗ Error: {e}")
+                print(f"[Papagaio] ✗ Error: {e}")
                 self.show_notification("Voice Input", f"✗ Error: {str(e)}", "critical")
             finally:
                 self.stop_esc_listener()
@@ -392,11 +392,11 @@ class VoiceDaemon:
         """Called when hotkey is pressed"""
         if self.is_recording:
             # Hotkey pressed again while recording - stop manually
-            print(f"[Voice Daemon] Hotkey pressed again - stopping recording...")
+            print(f"[Papagaio] Hotkey pressed again - stopping recording...")
             self.stop_recording_flag = True
         else:
             # Start new recording
-            print(f"[Voice Daemon] Hotkey triggered!")
+            print(f"[Papagaio] Hotkey triggered!")
             self.process_voice_input()
 
     def write_pid(self):
@@ -407,10 +407,10 @@ class VoiceDaemon:
             self.pid_file_handle.write(str(os.getpid()))
             self.pid_file_handle.flush()
         except BlockingIOError:
-            print(f"[Voice Daemon] Another instance is already running (PID file locked)")
+            print(f"[Papagaio] Another instance is already running (PID file locked)")
             sys.exit(1)
         except OSError as e:
-            print(f"[Voice Daemon] Failed to create PID file: {e}")
+            print(f"[Papagaio] Failed to create PID file: {e}")
             sys.exit(1)
 
     def remove_pid(self):
@@ -457,7 +457,7 @@ class VoiceDaemon:
         self.initialize_model()
 
         self.show_notification(
-            "Voice Daemon (VAD)",
+            "Papagaio (VAD)",
             f"✓ {self.msg('notification_ready').format(hotkey=self.hotkey)}",
             "normal"
         )
@@ -469,10 +469,10 @@ class VoiceDaemon:
             }) as listener:
                 listener.join()
         except KeyboardInterrupt:
-            print("\n[Voice Daemon] Stopping...")
+            print("\n[Papagaio] Stopping...")
         finally:
             self.remove_pid()
-            self.show_notification("Voice Daemon", "Stopped", "low")
+            self.show_notification("Papagaio", "Stopped", "low")
 
 
 def main():

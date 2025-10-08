@@ -4,9 +4,9 @@ Complete guide to publish Whisper Voice Daemon on Ubuntu PPA (Personal Package A
 
 After publication, users can install with:
 ```bash
-sudo add-apt-repository ppa:your-username/whisper-voice-daemon
+sudo add-apt-repository ppa:your-username/papagaio
 sudo apt update
-sudo apt install whisper-voice-daemon
+sudo apt install papagaio
 ```
 
 ## Prerequisites
@@ -62,7 +62,7 @@ Upload to Launchpad:
 
 1. Go to https://launchpad.net/~your-username/+activate-ppa
 2. Fill in:
-   - **URL:** whisper-voice-daemon
+   - **URL:** papagaio
    - **Display name:** Whisper Voice Daemon
    - **Description:**
      ```
@@ -81,10 +81,10 @@ Upload to Launchpad:
 ### Method 1: Using Build Script (Recommended)
 
 ```bash
-cd /mnt/development/git/personal/whisper-voice-daemon
+cd /mnt/development/git/personal/papagaio
 
 # Build and upload
-./packaging/build-ppa.sh ppa:your-username/whisper-voice-daemon
+./packaging/build-ppa.sh ppa:your-username/papagaio
 ```
 
 ### Method 2: Manual Steps
@@ -93,7 +93,7 @@ cd /mnt/development/git/personal/whisper-voice-daemon
 
 Ensure version has ubuntu suffix:
 ```
-whisper-voice-daemon (1.1.0-1ubuntu1) focal; urgency=medium
+papagaio (1.1.0-1ubuntu1) focal; urgency=medium
 ```
 
 Supported Ubuntu releases:
@@ -105,7 +105,7 @@ Supported Ubuntu releases:
 #### Step 2: Build Source Package
 
 ```bash
-cd /mnt/development/git/personal/whisper-voice-daemon
+cd /mnt/development/git/personal/papagaio
 
 # Clean previous builds
 rm -f ../*.deb ../*.build ../*.changes ../*.dsc ../*.tar.*
@@ -115,21 +115,21 @@ debuild -S -sa
 ```
 
 Files generated in parent directory:
-- `whisper-voice-daemon_1.1.0-1ubuntu1.dsc` - Package description
-- `whisper-voice-daemon_1.1.0-1ubuntu1.debian.tar.xz` - Debian files
-- `whisper-voice-daemon_1.1.0-1ubuntu1_source.changes` - Changes file
-- `whisper-voice-daemon_1.1.0-1ubuntu1_source.build` - Build log
+- `papagaio_1.1.0-1ubuntu1.dsc` - Package description
+- `papagaio_1.1.0-1ubuntu1.debian.tar.xz` - Debian files
+- `papagaio_1.1.0-1ubuntu1_source.changes` - Changes file
+- `papagaio_1.1.0-1ubuntu1_source.build` - Build log
 
 #### Step 3: Upload to PPA
 
 ```bash
 # Upload
-dput ppa:your-username/whisper-voice-daemon ../whisper-voice-daemon_1.1.0-1ubuntu1_source.changes
+dput ppa:your-username/papagaio ../papagaio_1.1.0-1ubuntu1_source.changes
 ```
 
 #### Step 4: Wait for Build
 
-1. Go to https://launchpad.net/~your-username/+archive/ubuntu/whisper-voice-daemon/+packages
+1. Go to https://launchpad.net/~your-username/+archive/ubuntu/papagaio/+packages
 2. Wait 10-30 minutes for build to complete
 3. Build will be done for: amd64, i386, arm64, armhf
 
@@ -144,11 +144,11 @@ Build status:
 
 ```bash
 # Add repository
-sudo add-apt-repository ppa:your-username/whisper-voice-daemon
+sudo add-apt-repository ppa:your-username/papagaio
 sudo apt update
 
 # Install
-sudo apt install whisper-voice-daemon
+sudo apt install papagaio
 ```
 
 ### Update README.md
@@ -158,9 +158,9 @@ Add PPA installation method:
 ```markdown
 **Ubuntu PPA:**
 ```bash
-sudo add-apt-repository ppa:your-username/whisper-voice-daemon
+sudo add-apt-repository ppa:your-username/papagaio
 sudo apt update
-sudo apt install whisper-voice-daemon
+sudo apt install papagaio
 ```
 ```
 
@@ -182,7 +182,7 @@ dch -v 1.2.0-1ubuntu1 -D focal
 3. Build and upload:
 ```bash
 debuild -S -sa
-dput ppa:your-username/whisper-voice-daemon ../whisper-voice-daemon_1.2.0-1ubuntu1_source.changes
+dput ppa:your-username/papagaio ../papagaio_1.2.0-1ubuntu1_source.changes
 ```
 
 ## Troubleshooting
@@ -204,7 +204,7 @@ echo "test" | gpg --clearsign
 
 Check build log:
 ```
-https://launchpad.net/~your-username/+archive/ubuntu/whisper-voice-daemon/+build/BUILD_ID
+https://launchpad.net/~your-username/+archive/ubuntu/papagaio/+build/BUILD_ID
 ```
 
 Common issues:
@@ -227,12 +227,12 @@ To support multiple Ubuntu versions, create separate uploads:
 # Ubuntu 20.04 (Focal)
 dch -v 1.1.0-1ubuntu1~focal1 -D focal
 debuild -S -sa
-dput ppa:your-username/whisper-voice-daemon ../whisper-voice-daemon_1.1.0-1ubuntu1~focal1_source.changes
+dput ppa:your-username/papagaio ../papagaio_1.1.0-1ubuntu1~focal1_source.changes
 
 # Ubuntu 22.04 (Jammy)
 dch -v 1.1.0-1ubuntu1~jammy1 -D jammy
 debuild -S -sa
-dput ppa:your-username/whisper-voice-daemon ../whisper-voice-daemon_1.1.0-1ubuntu1~jammy1_source.changes
+dput ppa:your-username/papagaio ../papagaio_1.1.0-1ubuntu1~jammy1_source.changes
 ```
 
 ## Resources
@@ -251,12 +251,12 @@ dput ppa:your-username/whisper-voice-daemon ../whisper-voice-daemon_1.1.0-1ubunt
 **For each release:**
 1. Update `debian/changelog`
 2. Run `debuild -S -sa`
-3. Run `dput ppa:your-username/whisper-voice-daemon ...`
+3. Run `dput ppa:your-username/papagaio ...`
 4. Wait for build (10-30 min)
 5. Users can `apt install`
 
 **Users install:**
 ```bash
-sudo add-apt-repository ppa:your-username/whisper-voice-daemon
-sudo apt install whisper-voice-daemon
+sudo add-apt-repository ppa:your-username/papagaio
+sudo apt install papagaio
 ```

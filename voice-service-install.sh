@@ -5,8 +5,8 @@
 set -e
 
 USER=$(whoami)
-SERVICE_NAME="voice-daemon"
-DAEMON_SCRIPT="/home/fns/tools/voice-daemon.py"
+SERVICE_NAME="papagaio"
+DAEMON_SCRIPT="/home/fns/tools/papagaio.py"
 SERVICE_FILE="$HOME/.config/systemd/user/${SERVICE_NAME}.service"
 
 echo "=========================================="

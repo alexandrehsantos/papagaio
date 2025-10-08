@@ -6,14 +6,14 @@
 override_dh_auto_install:
 	dh_auto_install
 	# Install scripts
-	install -D -m 755 voice-daemon.py debian/whisper-voice-daemon/usr/bin/voice-daemon
-	install -D -m 755 voice-ctl debian/whisper-voice-daemon/usr/bin/voice-ctl
-	install -D -m 755 install.sh debian/whisper-voice-daemon/usr/share/whisper-voice-daemon/install.sh
-	install -D -m 755 uninstall.sh debian/whisper-voice-daemon/usr/share/whisper-voice-daemon/uninstall.sh
+	install -D -m 755 voice-daemon.py debian/papagaio/usr/bin/voice-daemon
+	install -D -m 755 voice-ctl debian/papagaio/usr/bin/voice-ctl
+	install -D -m 755 install.sh debian/papagaio/usr/share/papagaio/install.sh
+	install -D -m 755 uninstall.sh debian/papagaio/usr/share/papagaio/uninstall.sh
 	# Install documentation
-	install -D -m 644 README.md debian/whisper-voice-daemon/usr/share/doc/whisper-voice-daemon/README.md
-	install -D -m 644 CHANGELOG.md debian/whisper-voice-daemon/usr/share/doc/whisper-voice-daemon/CHANGELOG.md
-	install -D -m 644 LICENSE debian/whisper-voice-daemon/usr/share/doc/whisper-voice-daemon/LICENSE
+	install -D -m 644 README.md debian/papagaio/usr/share/doc/papagaio/README.md
+	install -D -m 644 CHANGELOG.md debian/papagaio/usr/share/doc/papagaio/CHANGELOG.md
+	install -D -m 644 LICENSE debian/papagaio/usr/share/doc/papagaio/LICENSE
 
 override_dh_installsystemd:
 	# SystemD service is user-level, handled by install.sh

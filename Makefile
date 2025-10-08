@@ -3,7 +3,7 @@
 # Variables
 PYTHON := python3
 PIP := pip3
-PROJECT := whisper-voice-daemon
+PROJECT := papagaio
 VERSION := 1.0.1
 
 # Default target
@@ -58,7 +58,7 @@ format:
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf build/ dist/ *.egg-info/
-	rm -rf debian/whisper-voice-daemon
+	rm -rf debian/papagaio
 	rm -f ../*.deb ../*.build ../*.buildinfo ../*.changes ../*.dsc ../*.tar.xz
 	rm -rf __pycache__/ .pytest_cache/
 	find . -name "*.pyc" -delete

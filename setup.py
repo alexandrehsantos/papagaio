@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Whisper Voice Daemon - Setup Script
+Papagaio - Voice-to-text daemon for Linux
 """
 
 from setuptools import setup, find_packages
@@ -15,18 +15,18 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
     requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
 
 setup(
-    name="whisper-voice-daemon",
-    version="1.0.1",
+    name="papagaio",
+    version="1.1.0",
     author="Alexandre Santos",
     author_email="alexandrehsantos@example.com",
-    description="Voice-to-text daemon for Linux using Whisper speech recognition",
+    description="Voice-to-text daemon for Linux - Papagaio repeats what you say",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/alexandrehsantos/whisper-voice-daemon",
+    url="https://github.com/alexandrehsantos/papagaio",
     project_urls={
-        "Bug Tracker": "https://github.com/alexandrehsantos/whisper-voice-daemon/issues",
-        "Documentation": "https://github.com/alexandrehsantos/whisper-voice-daemon#readme",
-        "Source Code": "https://github.com/alexandrehsantos/whisper-voice-daemon",
+        "Bug Tracker": "https://github.com/alexandrehsantos/papagaio/issues",
+        "Documentation": "https://github.com/alexandrehsantos/papagaio#readme",
+        "Source Code": "https://github.com/alexandrehsantos/papagaio",
     },
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -45,7 +45,7 @@ setup(
         "Natural Language :: English",
         "Natural Language :: Portuguese",
     ],
-    keywords="whisper voice speech-to-text voice-input transcription linux daemon",
+    keywords="papagaio voice speech-to-text voice-input transcription linux daemon whisper",
     packages=find_packages(where="src") if os.path.exists("src") else [],
     python_requires=">=3.8",
     install_requires=requirements,
@@ -58,18 +58,18 @@ setup(
         ],
     },
     scripts=[
-        "voice-daemon.py",
-        "voice-ctl",
+        "papagaio.py",
+        "papagaioctl",
         "install.sh",
         "uninstall.sh",
     ],
     data_files=[
-        ("share/doc/whisper-voice-daemon", ["README.md", "CHANGELOG.md", "LICENSE", "CONTRIBUTING.md"]),
-        ("share/whisper-voice-daemon", ["requirements.txt"]),
+        ("share/doc/papagaio", ["README.md", "CHANGELOG.md", "LICENSE", "CONTRIBUTING.md"]),
+        ("share/papagaio", ["requirements.txt"]),
     ],
     entry_points={
         "console_scripts": [
-            "voice-daemon=voice-daemon:main",
+            "papagaio=papagaio:main",
         ],
     },
     include_package_data=True,

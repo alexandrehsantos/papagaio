@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: whisper-voice-daemon
+Upstream-Name: papagaio
 Upstream-Contact: Alexandre Santos <alexandrehsantos@example.com>
-Source: https://github.com/alexandrehsantos/whisper-voice-daemon
+Source: https://github.com/alexandrehsantos/papagaio
 
 Files: *
 Copyright: 2025 Alexandre Santos

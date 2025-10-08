@@ -16,9 +16,9 @@ NC='\033[0m' # No Color
 BOLD='\033[1m'
 
 # Installation directories
-INSTALL_DIR="$HOME/.local/bin/voice-daemon"
+INSTALL_DIR="$HOME/.local/bin/papagaio"
 BIN_DIR="$HOME/.local/bin"
-CONFIG_DIR="$HOME/.config/voice-daemon"
+CONFIG_DIR="$HOME/.config/papagaio"
 CACHE_DIR="$HOME/.cache/whisper-models"
 SERVICE_DIR="$HOME/.config/systemd/user"
 
@@ -256,15 +256,15 @@ install_files() {
     print_info "Installing files..."
 
     # Copy main daemon
-    cp "$SCRIPT_DIR/voice-daemon.py" "$INSTALL_DIR/voice-daemon.py"
-    chmod +x "$INSTALL_DIR/voice-daemon.py"
+    cp "$SCRIPT_DIR/papagaio.py" "$INSTALL_DIR/papagaio.py"
+    chmod +x "$INSTALL_DIR/papagaio.py"
 
     # Copy control script
-    cp "$SCRIPT_DIR/voice-ctl" "$INSTALL_DIR/voice-ctl"
-    chmod +x "$INSTALL_DIR/voice-ctl"
+    cp "$SCRIPT_DIR/papagaio-ctl" "$INSTALL_DIR/papagaio-ctl"
+    chmod +x "$INSTALL_DIR/papagaio-ctl"
 
     # Create symlink in PATH
-    ln -sf "$INSTALL_DIR/voice-ctl" "$BIN_DIR/voice-ctl"
+    ln -sf "$INSTALL_DIR/papagaio-ctl" "$BIN_DIR/papagaio-ctl"
 
     # Copy requirements
     if [ -f "$SCRIPT_DIR/requirements.txt" ]; then
@@ -277,19 +277,19 @@ install_files() {
 create_systemd_service() {
     print_info "Creating systemd service..."
 
-    local service_file="$SERVICE_DIR/voice-daemon.service"
+    local service_file="$SERVICE_DIR/papagaio.service"
 
     cat > "$service_file" << EOF
 [Unit]
 Description=Whisper Voice Daemon - Voice-to-Text Input
-Documentation=https://github.com/alexandrehsantos/whisper-voice-daemon
+Documentation=https://github.com/alexandrehsantos/papagaio
 After=graphical-session.target
 
 [Service]
 Type=simple
 Environment="DISPLAY=:0"
 Environment="XAUTHORITY=$HOME/.Xauthority"
-ExecStart=$INSTALL_DIR/voice-daemon.py -m $MODEL_CONFIG -l $LANG_CONFIG -k "$HOTKEY_CONFIG"
+ExecStart=$INSTALL_DIR/papagaio.py -m $MODEL_CONFIG -l $LANG_CONFIG -k "$HOTKEY_CONFIG"
 Restart=on-failure
 RestartSec=5
 
@@ -302,7 +302,7 @@ EOF
 
     # Enable if requested
     if [ "$AUTOSTART_CONFIG" = "yes" ] || [ "$AUTOSTART_CONFIG" = "y" ]; then
-        systemctl --user enable voice-daemon
+        systemctl --user enable papagaio
         print_success "Service created and enabled"
     else
         print_success "Service created (not enabled)"
@@ -367,13 +367,13 @@ print_final_info() {
     echo -e "${GREEN}${BOLD}╚════════════════════════════════════════════════════════════╝${NC}"
     echo ""
     echo -e "${BOLD}Quick Start:${NC}"
-    echo -e "  ${CYAN}voice-ctl start${NC}     - Start the daemon"
-    echo -e "  ${CYAN}voice-ctl status${NC}    - Check status"
-    echo -e "  ${CYAN}voice-ctl logs${NC}      - View logs"
-    echo -e "  ${CYAN}voice-ctl help${NC}      - Show all commands"
+    echo -e "  ${CYAN}papagaio-ctl start${NC}     - Start the daemon"
+    echo -e "  ${CYAN}papagaio-ctl status${NC}    - Check status"
+    echo -e "  ${CYAN}papagaio-ctl logs${NC}      - View logs"
+    echo -e "  ${CYAN}papagaio-ctl help${NC}      - Show all commands"
     echo ""
     echo -e "${BOLD}Usage:${NC}"
-    echo "  1. Start daemon: ${CYAN}voice-ctl start${NC}"
+    echo "  1. Start daemon: ${CYAN}papagaio-ctl start${NC}"
     echo "  2. Press hotkey: ${YELLOW}$HOTKEY_CONFIG${NC}"
     echo "  3. Speak clearly"
     echo "  4. Stop recording:"
@@ -394,7 +394,7 @@ print_final_info() {
     echo ""
     echo -e "${BOLD}Documentation:${NC}"
     echo "  README:     ${SCRIPT_DIR}/README.md"
-    echo "  GitHub:     https://github.com/alexandrehsantos/whisper-voice-daemon"
+    echo "  GitHub:     https://github.com/alexandrehsantos/papagaio"
     echo ""
     echo -e "${BOLD}To uninstall:${NC}"
     echo "  Run: ${CYAN}./uninstall.sh${NC}"
@@ -406,13 +406,13 @@ cleanup_on_error() {
     print_info "Cleaning up..."
 
     # Stop service if running
-    systemctl --user stop voice-daemon 2>/dev/null || true
-    systemctl --user disable voice-daemon 2>/dev/null || true
+    systemctl --user stop papagaio 2>/dev/null || true
+    systemctl --user disable papagaio 2>/dev/null || true
 
     # Remove files
     rm -rf "$INSTALL_DIR" 2>/dev/null || true
-    rm -f "$BIN_DIR/voice-ctl" 2>/dev/null || true
-    rm -f "$SERVICE_DIR/voice-daemon.service" 2>/dev/null || true
+    rm -f "$BIN_DIR/papagaio-ctl" 2>/dev/null || true
+    rm -f "$SERVICE_DIR/papagaio.service" 2>/dev/null || true
 
     exit 1
 }
@@ -474,7 +474,7 @@ main() {
     if [ "$start_now" = "yes" ] || [ "$start_now" = "y" ] || [ -z "$start_now" ]; then
         echo ""
         print_info "Starting daemon..."
-        "$BIN_DIR/voice-ctl" start
+        "$BIN_DIR/papagaio-ctl" start
     fi
 }
 

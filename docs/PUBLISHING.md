@@ -9,7 +9,7 @@ This guide explains how to publish Whisper Voice Daemon to various package repos
 Recommended as the first distribution method.
 
 - Works on all Linux distributions
-- Installation: `pip install whisper-voice-daemon`
+- Installation: `pip install papagaio`
 - Automatic dependency management
 - No approval required
 
@@ -31,7 +31,7 @@ Recommended as the first distribution method.
 
 4. **Test installation:**
    ```bash
-   pip install --index-url https://test.pypi.org/simple/ whisper-voice-daemon
+   pip install --index-url https://test.pypi.org/simple/ papagaio
    ```
 
 5. **Production upload:**
@@ -41,7 +41,7 @@ Recommended as the first distribution method.
 
 **Users can install:**
 ```bash
-pip install whisper-voice-daemon
+pip install papagaio
 ```
 
 ---
@@ -64,7 +64,7 @@ pip install whisper-voice-daemon
 
 3. **Clone AUR repository:**
    ```bash
-   git clone ssh://aur@aur.archlinux.org/whisper-voice-daemon.git aur-repo
+   git clone ssh://aur@aur.archlinux.org/papagaio.git aur-repo
    cd aur-repo
    ```
 
@@ -82,15 +82,15 @@ pip install whisper-voice-daemon
 6. **Push to AUR:**
    ```bash
    git add PKGBUILD .SRCINFO
-   git commit -m "Initial upload: whisper-voice-daemon 1.0.1"
+   git commit -m "Initial upload: papagaio 1.0.1"
    git push
    ```
 
 **Users can install:**
 ```bash
-yay -S whisper-voice-daemon
+yay -S papagaio
 # or
-paru -S whisper-voice-daemon
+paru -S papagaio
 ```
 
 ---
@@ -107,7 +107,7 @@ paru -S whisper-voice-daemon
 
 2. **Create PPA:**
    - Go to: https://launchpad.net/~your-username/+activate-ppa
-   - Name: whisper-voice-daemon
+   - Name: papagaio
    - Description: Voice-to-text daemon for Linux
 
 3. **Setup GPG key:**
@@ -125,16 +125,16 @@ paru -S whisper-voice-daemon
 
 5. **Upload to PPA:**
    ```bash
-   dput ppa:your-username/whisper-voice-daemon ../whisper-voice-daemon_1.0.1-1_source.changes
+   dput ppa:your-username/papagaio ../papagaio_1.0.1-1_source.changes
    ```
 
 6. **Wait for build** (usually 10-30 minutes)
 
 **Users can install:**
 ```bash
-sudo add-apt-repository ppa:your-username/whisper-voice-daemon
+sudo add-apt-repository ppa:your-username/papagaio
 sudo apt update
-sudo apt install whisper-voice-daemon
+sudo apt install papagaio
 ```
 
 ---
@@ -154,18 +154,18 @@ sudo apt install whisper-voice-daemon
 
 2. **Package will be in parent directory:**
    ```
-   ../whisper-voice-daemon_1.0.1-1_all.deb
+   ../papagaio_1.0.1-1_all.deb
    ```
 
 3. **Upload to GitHub Release:**
    ```bash
-   gh release upload v1.0.1 ../whisper-voice-daemon_1.0.1-1_all.deb
+   gh release upload v1.0.1 ../papagaio_1.0.1-1_all.deb
    ```
 
 **Users can install:**
 ```bash
-wget https://github.com/alexandrehsantos/whisper-voice-daemon/releases/download/v1.0.1/whisper-voice-daemon_1.0.1-1_all.deb
-sudo dpkg -i whisper-voice-daemon_1.0.1-1_all.deb
+wget https://github.com/alexandrehsantos/papagaio/releases/download/v1.0.1/papagaio_1.0.1-1_all.deb
+sudo dpkg -i papagaio_1.0.1-1_all.deb
 sudo apt install -f  # Fix dependencies
 ```
 
@@ -180,7 +180,7 @@ sudo apt install -f  # Fix dependencies
 
 1. **Create snapcraft.yaml:**
    ```yaml
-   name: whisper-voice-daemon
+   name: papagaio
    version: '1.0.1'
    summary: Voice-to-text daemon
    description: |
@@ -190,12 +190,12 @@ sudo apt install -f  # Fix dependencies
 2. **Build and publish:**
    ```bash
    snapcraft
-   snapcraft upload whisper-voice-daemon_1.0.1_amd64.snap
+   snapcraft upload papagaio_1.0.1_amd64.snap
    ```
 
 **Users can install:**
 ```bash
-snap install whisper-voice-daemon
+snap install papagaio
 ```
 
 ---
@@ -211,7 +211,7 @@ snap install whisper-voice-daemon
 
 **Users can install:**
 ```bash
-flatpak install flathub com.github.alexandrehsantos.whisper-voice-daemon
+flatpak install flathub com.github.alexandrehsantos.papagaio
 ```
 
 ---

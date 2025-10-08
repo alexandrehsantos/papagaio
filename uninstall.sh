@@ -15,9 +15,9 @@ NC='\033[0m'
 BOLD='\033[1m'
 
 # Installation directories
-INSTALL_DIR="$HOME/.local/bin/voice-daemon"
+INSTALL_DIR="$HOME/.local/bin/papagaio"
 BIN_DIR="$HOME/.local/bin"
-CONFIG_DIR="$HOME/.config/voice-daemon"
+CONFIG_DIR="$HOME/.config/papagaio"
 CACHE_DIR="$HOME/.cache/whisper-models"
 SERVICE_DIR="$HOME/.config/systemd/user"
 
@@ -73,13 +73,13 @@ ask_remove_config() {
 stop_service() {
     print_info "Stopping service..."
 
-    if systemctl --user is-active voice-daemon &>/dev/null; then
-        systemctl --user stop voice-daemon
+    if systemctl --user is-active papagaio &>/dev/null; then
+        systemctl --user stop papagaio
         print_success "Service stopped"
     fi
 
-    if systemctl --user is-enabled voice-daemon &>/dev/null; then
-        systemctl --user disable voice-daemon
+    if systemctl --user is-enabled papagaio &>/dev/null; then
+        systemctl --user disable papagaio
         print_success "Auto-start disabled"
     fi
 }
@@ -87,7 +87,7 @@ stop_service() {
 remove_service() {
     print_info "Removing systemd service..."
 
-    local service_file="$SERVICE_DIR/voice-daemon.service"
+    local service_file="$SERVICE_DIR/papagaio.service"
 
     if [ -f "$service_file" ]; then
         rm -f "$service_file"
@@ -102,9 +102,9 @@ remove_files() {
     print_info "Removing installation files..."
 
     # Remove symlink
-    if [ -L "$BIN_DIR/voice-ctl" ]; then
-        rm -f "$BIN_DIR/voice-ctl"
-        print_success "Removed voice-ctl command"
+    if [ -L "$BIN_DIR/papagaio-ctl" ]; then
+        rm -f "$BIN_DIR/papagaio-ctl"
+        print_success "Removed papagaio-ctl command"
     fi
 
     # Remove installation directory

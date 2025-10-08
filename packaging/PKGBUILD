@@ -1,11 +1,11 @@
 # Maintainer: Alexandre Santos <alexandrehsantos@example.com>
 
-pkgname=whisper-voice-daemon
+pkgname=papagaio
 pkgver=1.0.1
 pkgrel=1
 pkgdesc="Voice-to-text daemon for Linux using OpenAI Whisper"
 arch=('any')
-url="https://github.com/alexandrehsantos/whisper-voice-daemon"
+url="https://github.com/alexandrehsantos/papagaio"
 license=('MIT')
 depends=(
     'python>=3.8'

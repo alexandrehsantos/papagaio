@@ -6,7 +6,7 @@ Whisper Voice Daemon is a local voice-to-text service designed for Linux systems
 
 ## System Components
 
-### 1. Voice Daemon (`voice-daemon.py`)
+### 1. Voice Daemon (`papagaio.py`)
 
 **Purpose:** Main daemon process that handles voice input
 
@@ -29,7 +29,7 @@ class VoiceDaemon:
     def start()             # Start daemon loop
 ```
 
-### 2. Control Script (`voice-ctl`)
+### 2. Control Script (`papagaio-ctl`)
 
 **Purpose:** Command-line interface for managing the daemon
 
@@ -107,7 +107,7 @@ Text appears in active application
 
 ### Level 1: RMS-based VAD (Python)
 
-**Location:** `voice-daemon.py:75-82`
+**Location:** `papagaio.py:75-82`
 
 ```python
 def get_rms(data):
@@ -135,7 +135,7 @@ if silence_chunks > max_silence_chunks:
 
 ### Level 2: Whisper VAD (Model-based)
 
-**Location:** `voice-daemon.py:168-174`
+**Location:** `papagaio.py:168-174`
 
 ```python
 vad_parameters = {
@@ -213,7 +213,7 @@ echo "text" | xclip -selection clipboard
 
 ### Compile-time Constants
 
-**Location:** `voice-daemon.py:25-36`
+**Location:** `papagaio.py:25-36`
 
 ```python
 CHUNK_SIZE = 8192              # Audio buffer size
@@ -228,7 +228,7 @@ MAX_RECORDING_DURATION_SECONDS = 3600  # Max 1 hour
 ### Runtime Arguments
 
 ```bash
-python3 voice-daemon.py \
+python3 papagaio.py \
     -m small \                  # Model size
     -k "<ctrl>+<alt>+v" \      # Hotkey
     --ydotool                  # Force ydotool
@@ -236,7 +236,7 @@ python3 voice-daemon.py \
 
 ### Systemd Configuration
 
-**File:** `~/.config/systemd/user/voice-daemon.service`
+**File:** `~/.config/systemd/user/papagaio.service`
 
 ```ini
 [Unit]
@@ -247,7 +247,7 @@ After=graphical-session.target
 Type=simple
 Environment="DISPLAY=:0"
 Environment="XAUTHORITY=/home/fns/.Xauthority"
-ExecStart=/usr/bin/python3 /path/to/voice-daemon.py -m small
+ExecStart=/usr/bin/python3 /path/to/papagaio.py -m small
 Restart=on-failure
 RestartSec=5
 
@@ -278,7 +278,7 @@ signal.signal(SIGTERM, cleanup_handler)
 
 ### PID Lock
 
-**File:** `/tmp/voice-daemon.pid`
+**File:** `/tmp/papagaio.pid`
 
 **Purpose:** Prevent multiple instances
 

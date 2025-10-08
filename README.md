@@ -1,6 +1,8 @@
-# Whisper Voice Daemon
+# Papagaio
 
-Voice-to-text daemon for Linux with global hotkey support. Runs as a background service and transcribes speech to text using OpenAI's Whisper model via the Faster-Whisper implementation.
+Voice-to-text daemon for Linux - Like a parrot, it repeats what you say.
+
+Papagaio runs as a background service and transcribes speech to text using OpenAI's Whisper model. Press a global hotkey anywhere on your system to dictate text into any application.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -33,7 +35,7 @@ Voice-to-text daemon for Linux with global hotkey support. Runs as a background 
 #### Method 1: PyPI
 
 ```bash
-pip install whisper-voice-daemon
+pip install papagaio
 ```
 
 Recommended for most users. Works on all Linux distributions.
@@ -41,8 +43,8 @@ Recommended for most users. Works on all Linux distributions.
 #### Method 2: From Source
 
 ```bash
-git clone https://github.com/alexandrehsantos/whisper-voice-daemon.git
-cd whisper-voice-daemon
+git clone https://github.com/alexandrehsantos/papagaio.git
+cd papagaio
 ./install.sh
 ```
 
@@ -53,29 +55,29 @@ The installer performs the following tasks:
 - Tests microphone access
 - Prompts for configuration (language, model, hotkey)
 - Creates systemd user service
-- Adds voice-ctl to PATH
+- Adds papagaio-ctl to PATH
 
 #### Method 3: Distribution Packages
 
 **Ubuntu/Debian (.deb):**
 ```bash
-wget https://github.com/alexandrehsantos/whisper-voice-daemon/releases/latest/download/whisper-voice-daemon.deb
-sudo dpkg -i whisper-voice-daemon.deb
+wget https://github.com/alexandrehsantos/papagaio/releases/latest/download/papagaio.deb
+sudo dpkg -i papagaio.deb
 sudo apt install -f
 ```
 
 **Arch Linux (AUR):**
 ```bash
-yay -S whisper-voice-daemon
+yay -S papagaio
 ```
 
 **Ubuntu PPA:**
 
 After PPA publication, installation will be:
 ```bash
-sudo add-apt-repository ppa:alexandrehsantos/whisper-voice-daemon
+sudo add-apt-repository ppa:alexandrehsantos/papagaio
 sudo apt update
-sudo apt install whisper-voice-daemon
+sudo apt install papagaio
 ```
 
 To publish to PPA, see: [docs/PPA-GUIDE.md](docs/PPA-GUIDE.md)
@@ -94,42 +96,42 @@ To publish to PPA, see: [docs/PPA-GUIDE.md](docs/PPA-GUIDE.md)
 
 ```bash
 # Start the service
-voice-ctl start
+papagaio-ctl start
 
 # Stop the service
-voice-ctl stop
+papagaio-ctl stop
 
 # Restart the service
-voice-ctl restart
+papagaio-ctl restart
 
 # Check status
-voice-ctl status
+papagaio-ctl status
 
 # View logs in real-time
-voice-ctl logs
+papagaio-ctl logs
 
 # Show configuration
-voice-ctl config
+papagaio-ctl config
 
 # Edit configuration
-voice-ctl edit
+papagaio-ctl edit
 
 # Test in foreground (for debugging)
-voice-ctl test
+papagaio-ctl test
 
 # Enable/disable auto-start
-voice-ctl enable
-voice-ctl disable
+papagaio-ctl enable
+papagaio-ctl disable
 
 # Show help
-voice-ctl help
+papagaio-ctl help
 ```
 
 ### Using Voice Input
 
 1. **Start the daemon:**
    ```bash
-   voice-ctl start
+   papagaio-ctl start
    ```
 
 2. **Press the hotkey** (`Ctrl+Alt+V`) in any application
@@ -145,7 +147,7 @@ voice-ctl help
 
 ```bash
 # Terminal 1: Start the daemon
-voice-ctl start
+papagaio-ctl start
 
 # Terminal 2: Open your favorite editor
 vim document.txt
@@ -159,14 +161,14 @@ vim document.txt
 To completely remove Whisper Voice Daemon:
 
 ```bash
-cd whisper-voice-daemon
+cd papagaio
 ./uninstall.sh
 ```
 
 The uninstaller will:
 - Stop and remove the systemd service
-- Remove installed files from `~/.local/bin/voice-daemon`
-- Remove the `voice-ctl` command
+- Remove installed files from `~/.local/bin/papagaio`
+- Remove the `papagaio-ctl` command
 - Ask if you want to remove configuration files
 - Ask if you want to remove downloaded Whisper models
 - Optionally remove PATH entry from shell config
@@ -178,16 +180,16 @@ The uninstaller will:
 Edit your configuration file:
 
 ```bash
-voice-ctl edit
+papagaio-ctl edit
 ```
 
 Or view current settings:
 
 ```bash
-voice-ctl config
+papagaio-ctl config
 ```
 
-**Configuration file location:** `~/.config/voice-daemon/config.ini`
+**Configuration file location:** `~/.config/papagaio/config.ini`
 
 ### Configuration Options
 
@@ -211,7 +213,7 @@ typing_delay = 0.3             # Delay before typing (seconds)
 After editing, restart the daemon:
 
 ```bash
-voice-ctl restart
+papagaio-ctl restart
 ```
 
 ### Available Whisper Models
@@ -226,9 +228,9 @@ voice-ctl restart
 Change model in config file:
 
 ```bash
-voice-ctl edit
+papagaio-ctl edit
 # Change: model = small  →  model = medium
-voice-ctl restart
+papagaio-ctl restart
 ```
 
 ## Architecture
@@ -295,10 +297,10 @@ voice-ctl restart
 
 ```bash
 # Check logs for errors
-voice-ctl logs
+papagaio-ctl logs
 
 # Test manually in foreground
-python3 /path/to/voice-daemon.py -m small
+python3 /path/to/papagaio.py -m small
 ```
 
 ### Hotkey Not Working
@@ -311,7 +313,7 @@ which xdotool
 xdotool key Return
 
 # Check if another instance is running
-ps aux | grep voice-daemon
+ps aux | grep papagaio
 ```
 
 ### Poor Transcription Quality
@@ -324,7 +326,7 @@ ps aux | grep voice-daemon
 arecord -d 3 test.wav && aplay test.wav
 
 # 3. Adjust silence threshold
-# Edit voice-daemon.py: SILENCE_THRESHOLD_RMS = 300 (more sensitive)
+# Edit papagaio.py: SILENCE_THRESHOLD_RMS = 300 (more sensitive)
 ```
 
 ### Microphone Not Detected
@@ -348,14 +350,14 @@ Contributions are welcome. Please submit pull requests or open issues on GitHub.
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/whisper-voice-daemon.git
-cd whisper-voice-daemon
+git clone https://github.com/YOUR_USERNAME/papagaio.git
+cd papagaio
 
 # Install dev dependencies
 pip3 install -r requirements.txt
 
 # Run in debug mode
-python3 voice-daemon.py -m small
+python3 papagaio.py -m small
 ```
 
 ### Code Style
@@ -377,8 +379,8 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Support
 
-- Issues: [GitHub Issues](https://github.com/alexandrehsantos/whisper-voice-daemon/issues)
-- Discussions: [GitHub Discussions](https://github.com/alexandrehsantos/whisper-voice-daemon/discussions)
+- Issues: [GitHub Issues](https://github.com/alexandrehsantos/papagaio/issues)
+- Discussions: [GitHub Discussions](https://github.com/alexandrehsantos/papagaio/discussions)
 
 ## Roadmap
 

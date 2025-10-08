@@ -39,7 +39,7 @@ When submitting a bug:
 
 **Logs:**
 ```
-Paste relevant logs from `voice-ctl logs`
+Paste relevant logs from `papagaio-ctl logs`
 ```
 ```
 
@@ -56,14 +56,14 @@ Feature suggestions are welcome! Please:
 
 ```bash
 # Fork and clone
-git clone https://github.com/YOUR_USERNAME/whisper-voice-daemon.git
-cd whisper-voice-daemon
+git clone https://github.com/YOUR_USERNAME/papagaio.git
+cd papagaio
 
 # Install dependencies
 pip3 install -r requirements.txt
 
 # Run in debug mode
-python3 voice-daemon.py -m small
+python3 papagaio.py -m small
 ```
 
 ## 📝 Code Guidelines

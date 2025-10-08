@@ -9,7 +9,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 VERSION="1.0.1"
-PKG_NAME="whisper-voice-daemon"
+PKG_NAME="papagaio"
 
 echo "============================================"
 echo "Building Debian Package for $PKG_NAME v$VERSION"
@@ -27,7 +27,7 @@ fi
 cd "$PROJECT_DIR"
 
 echo "[1/4] Cleaning previous builds..."
-rm -rf debian/whisper-voice-daemon
+rm -rf debian/papagaio
 rm -f ../*.deb ../*.build ../*.buildinfo ../*.changes ../*.dsc ../*.tar.xz
 
 echo "[2/4] Building package..."

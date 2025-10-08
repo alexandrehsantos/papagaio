@@ -73,13 +73,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - 2025-10-08
 
 ### Added - Packaging & Distribution
-- PyPI package support (`pip install whisper-voice-daemon`)
+- PyPI package support (`pip install papagaio`)
 - Debian package (.deb) with full debian/ structure
 - AUR PKGBUILD for Arch Linux
 - Installer with distro detection
 - Uninstaller script
-- Configuration file support (~/.config/voice-daemon/config.ini)
-- Enhanced voice-ctl with new commands (config, edit, version, help)
+- Configuration file support (~/.config/papagaio/config.ini)
+- Enhanced papagaio-ctl with new commands (config, edit, version, help)
 - Makefile for building
 - Publishing guide (docs/PUBLISHING.md)
 
@@ -87,8 +87,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Installer now interactive with language/model/hotkey selection
 - Installer auto-detects distribution (Ubuntu/Debian/Fedora/Arch/openSUSE)
 - Installer auto-installs system dependencies
-- Installation to ~/.local/bin/voice-daemon (proper location)
-- voice-ctl now in PATH automatically
+- Installation to ~/.local/bin/papagaio (proper location)
+- papagaio-ctl now in PATH automatically
 - Improved README with multiple installation methods
 
 ### Technical
@@ -138,4 +138,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[1.0.0]: https://github.com/YOUR_USERNAME/whisper-voice-daemon/releases/tag/v1.0.0
+[1.0.0]: https://github.com/YOUR_USERNAME/papagaio/releases/tag/v1.0.0
