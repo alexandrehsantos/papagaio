@@ -1,0 +1,32 @@
+# Include documentation
+include README.md
+include CHANGELOG.md
+include LICENSE
+include CONTRIBUTING.md
+
+# Include requirements
+include requirements.txt
+
+# Include scripts
+include voice-daemon.py
+include voice-ctl
+include install.sh
+include uninstall.sh
+
+# Include documentation directory
+recursive-include docs *.md
+
+# Include packaging files
+include Makefile
+include setup.py
+include MANIFEST.in
+
+# Exclude unnecessary files
+exclude .gitignore
+exclude voice-service-install.sh
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * *.swp
+recursive-exclude * *.swo
+recursive-exclude * *~
+recursive-exclude .git *

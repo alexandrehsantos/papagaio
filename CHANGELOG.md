@@ -65,15 +65,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- 🛑 Manual stop: Press hotkey again during recording to stop immediately
-- ❌ Cancel recording: Press ESC key to cancel recording without transcription
-- 🌍 Bilingual interface: Full English and Portuguese UI support
-- 🔤 Configurable language: Command-line argument to choose interface language
+### Planned
+- Ubuntu PPA publication
+- Snap package
+- Flatpak package
+
+## [1.1.0] - 2025-10-08
+
+### Added - Professional Packaging & Distribution
+- 📦 PyPI package support (`pip install whisper-voice-daemon`)
+- 🏗️ Debian package (.deb) with full debian/ structure
+- 🎯 AUR PKGBUILD for Arch Linux
+- 🛠️ Professional installer with distro detection
+- 🗑️ Complete uninstaller script
+- ⚙️ Configuration file support (~/.config/voice-daemon/config.ini)
+- 🔧 Enhanced voice-ctl with new commands (config, edit, version, help)
+- 📊 Makefile for easy building
+- 📝 Publishing guide (docs/PUBLISHING.md)
 
 ### Changed
-- Improved user feedback during recording with manual control instructions
-- Enhanced notification messages to show available control options
+- Installer now interactive with language/model/hotkey selection
+- Installer auto-detects distribution (Ubuntu/Debian/Fedora/Arch/openSUSE)
+- Installer auto-installs system dependencies
+- Installation to ~/.local/bin/voice-daemon (proper location)
+- voice-ctl now in PATH automatically
+- Improved README with multiple installation methods
+
+### Technical
+- Created setup.py for PyPI
+- Created debian/control, debian/rules, debian/changelog
+- Build scripts for .deb and PyPI packages
+- MANIFEST.in for package inclusion
+- Proper Python package structure
 
 ## [1.0.1] - 2025-10-08
 

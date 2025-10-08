@@ -1,0 +1,64 @@
+# Maintainer: Alexandre Santos <alexandrehsantos@example.com>
+
+pkgname=whisper-voice-daemon
+pkgver=1.0.1
+pkgrel=1
+pkgdesc="Voice-to-text daemon for Linux using OpenAI Whisper"
+arch=('any')
+url="https://github.com/alexandrehsantos/whisper-voice-daemon"
+license=('MIT')
+depends=(
+    'python>=3.8'
+    'python-pip'
+    'portaudio'
+    'xdotool'
+)
+makedepends=(
+    'python-setuptools'
+    'python-build'
+    'python-installer'
+    'python-wheel'
+)
+optdepends=(
+    'ydotool: Wayland support for keyboard simulation'
+    'xclip: Clipboard fallback for text input'
+)
+source=(
+    "${pkgname}-${pkgver}.tar.gz::https://github.com/alexandrehsantos/${pkgname}/archive/v${pkgver}.tar.gz"
+)
+sha256sums=('SKIP')  # Update with actual checksum after release
+
+prepare() {
+    cd "$srcdir/$pkgname-$pkgver"
+}
+
+build() {
+    cd "$srcdir/$pkgname-$pkgver"
+
+    # Install Python dependencies
+    pip install --user -r requirements.txt
+}
+
+package() {
+    cd "$srcdir/$pkgname-$pkgver"
+
+    # Install main script
+    install -Dm755 voice-daemon.py "$pkgdir/usr/bin/voice-daemon"
+    install -Dm755 voice-ctl "$pkgdir/usr/bin/voice-ctl"
+
+    # Install helper scripts
+    install -Dm755 install.sh "$pkgdir/usr/share/$pkgname/install.sh"
+    install -Dm755 uninstall.sh "$pkgdir/usr/share/$pkgname/uninstall.sh"
+
+    # Install documentation
+    install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+    install -Dm644 CHANGELOG.md "$pkgdir/usr/share/doc/$pkgname/CHANGELOG.md"
+    install -Dm644 CONTRIBUTING.md "$pkgdir/usr/share/doc/$pkgname/CONTRIBUTING.md"
+    install -Dm644 docs/ARCHITECTURE.md "$pkgdir/usr/share/doc/$pkgname/ARCHITECTURE.md"
+
+    # Install license
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+
+    # Install requirements
+    install -Dm644 requirements.txt "$pkgdir/usr/share/$pkgname/requirements.txt"
+}

@@ -1,0 +1,32 @@
+Source: whisper-voice-daemon
+Section: sound
+Priority: optional
+Maintainer: Alexandre Santos <alexandrehsantos@example.com>
+Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptools
+Standards-Version: 4.6.0
+Homepage: https://github.com/alexandrehsantos/whisper-voice-daemon
+Vcs-Browser: https://github.com/alexandrehsantos/whisper-voice-daemon
+Vcs-Git: https://github.com/alexandrehsantos/whisper-voice-daemon.git
+
+Package: whisper-voice-daemon
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends},
+         python3 (>= 3.8),
+         python3-pip,
+         portaudio19-dev,
+         xdotool,
+         libportaudio2
+Recommends: python3-pyaudio, python3-pynput
+Description: Voice-to-text daemon for Linux using OpenAI Whisper
+ Whisper Voice Daemon is a professional voice input system that runs as a
+ background service and transcribes speech to text using OpenAI's Whisper
+ model.
+ .
+ Features:
+  * Global hotkey support (Ctrl+Alt+V)
+  * 100% local processing (privacy-first)
+  * Voice Activity Detection (VAD)
+  * Manual control (stop/cancel)
+  * Bilingual interface (English/Portuguese)
+  * Systemd integration with auto-start
+  * Works everywhere (terminal, browser, IDE)

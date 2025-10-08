@@ -22,48 +22,73 @@ A lightweight, privacy-focused voice input system that runs as a background serv
 
 ## 📦 Installation
 
-### Prerequisites
-
-**System Requirements:**
-- Linux (Ubuntu, Debian, Fedora, Arch, etc.)
+### System Requirements
+- Linux (Ubuntu, Debian, Fedora, Arch, openSUSE, etc.)
 - Python 3.8 or higher
 - Working microphone
-- `xdotool` or `ydotool` for keyboard simulation
+- 2GB+ free disk space (for Whisper model)
+- Internet connection (for first-time model download)
 
-**Install system dependencies:**
+---
+
+### Installation Methods
+
+#### 🐍 Method 1: PyPI (Recommended - Works on ALL distros)
 
 ```bash
-# Ubuntu/Debian
-sudo apt update
-sudo apt install -y python3-dev portaudio19-dev xdotool
-
-# Fedora
-sudo dnf install python3-devel portaudio-devel xdotool
-
-# Arch Linux
-sudo pacman -S python portaudio xdotool
+pip install whisper-voice-daemon
 ```
 
-### Quick Install
+#### 📥 Method 2: From Source (Interactive Installer)
 
 ```bash
-# Clone the repository
-cd /mnt/development/git/personal
-git clone https://github.com/YOUR_USERNAME/whisper-voice-daemon.git
+git clone https://github.com/alexandrehsantos/whisper-voice-daemon.git
 cd whisper-voice-daemon
-
-# Install Python dependencies
-pip3 install -r requirements.txt
-
-# Install and start the service
-./voice-service-install.sh
+./install.sh
 ```
 
-The installer will:
+**The installer will:**
+- ✅ Auto-detect your Linux distribution
+- ✅ Install system dependencies (xdotool, portaudio, python3-dev)
 - ✅ Install Python dependencies
-- ✅ Create systemd user service
-- ✅ Enable auto-start on login
-- ✅ Start the daemon immediately
+- ✅ Test your microphone
+- ✅ Interactive configuration (language, model, hotkey)
+- ✅ Setup systemd service
+- ✅ Add `voice-ctl` to PATH
+
+#### 🏗️ Method 3: Distribution Packages
+
+**Ubuntu/Debian (.deb):**
+```bash
+# Download from releases
+wget https://github.com/alexandrehsantos/whisper-voice-daemon/releases/latest/download/whisper-voice-daemon_1.0.1-1_all.deb
+sudo dpkg -i whisper-voice-daemon_1.0.1-1_all.deb
+sudo apt install -f
+```
+
+**Arch Linux (AUR):**
+```bash
+yay -S whisper-voice-daemon
+# or
+paru -S whisper-voice-daemon
+```
+
+**Ubuntu PPA** *(coming soon)*:
+```bash
+sudo add-apt-repository ppa:alexandrehsantos/whisper-voice-daemon
+sudo apt update
+sudo apt install whisper-voice-daemon
+```
+
+---
+
+### Supported Distributions
+
+✅ Ubuntu / Debian / Linux Mint / Pop!_OS
+✅ Fedora / RHEL / CentOS
+✅ Arch Linux / Manjaro
+✅ openSUSE / SUSE
+✅ Any Linux with Python 3.8+
 
 ## 🚀 Usage
 
@@ -76,14 +101,30 @@ voice-ctl start
 # Stop the service
 voice-ctl stop
 
+# Restart the service
+voice-ctl restart
+
 # Check status
 voice-ctl status
 
 # View logs in real-time
 voice-ctl logs
 
+# Show configuration
+voice-ctl config
+
+# Edit configuration
+voice-ctl edit
+
 # Test in foreground (for debugging)
 voice-ctl test
+
+# Enable/disable auto-start
+voice-ctl enable
+voice-ctl disable
+
+# Show help
+voice-ctl help
 ```
 
 ### Using Voice Input
@@ -115,47 +156,67 @@ vim document.txt
 # Text is automatically typed into vim!
 ```
 
+## 🗑️ Uninstallation
+
+To completely remove Whisper Voice Daemon:
+
+```bash
+cd whisper-voice-daemon
+./uninstall.sh
+```
+
+The uninstaller will:
+- Stop and remove the systemd service
+- Remove installed files from `~/.local/bin/voice-daemon`
+- Remove the `voice-ctl` command
+- Ask if you want to remove configuration files
+- Ask if you want to remove downloaded Whisper models
+- Optionally remove PATH entry from shell config
+
 ## ⚙️ Configuration
 
-### Change Language
+### Easy Configuration
 
-The daemon supports both English and Portuguese interfaces:
-
-```bash
-# English (default)
-voice-daemon.py -m small -l en
-
-# Portuguese
-voice-daemon.py -m small -l pt
-```
-
-To change permanently, edit the systemd service file (see below).
-
-### Change Hotkey
-
-Edit the systemd service file:
+Edit your configuration file:
 
 ```bash
-nano ~/.config/systemd/user/voice-daemon.service
+voice-ctl edit
 ```
 
-Modify the `ExecStart` line:
+Or view current settings:
+
+```bash
+voice-ctl config
+```
+
+**Configuration file location:** `~/.config/voice-daemon/config.ini`
+
+### Configuration Options
 
 ```ini
-# Use Ctrl+Shift+V instead
-ExecStart=/usr/bin/python3 /path/to/voice-daemon.py -m small -k "<ctrl>+<shift>+v"
+[General]
+model = small              # Whisper model: tiny, base, small, medium
+language = en              # Interface language: en, pt
+hotkey = <ctrl>+<alt>+v   # Global hotkey
+cache_dir = ~/.cache/whisper-models
+
+[Audio]
+silence_threshold = 400         # Microphone sensitivity (lower = more sensitive)
+silence_duration = 5.0          # Silence timeout in seconds
+max_recording_time = 3600       # Maximum recording duration (1 hour)
+
+[Advanced]
+use_ydotool = false            # Force ydotool instead of xdotool
+typing_delay = 0.3             # Delay before typing (seconds)
 ```
 
-Reload and restart:
+After editing, restart the daemon:
 
 ```bash
-systemctl --user daemon-reload
 voice-ctl restart
 ```
 
-### Change Whisper Model
-
-Available models (speed vs accuracy):
+### Available Whisper Models
 
 | Model | Size | Speed | Accuracy | Recommended For |
 |-------|------|-------|----------|----------------|
@@ -164,24 +225,12 @@ Available models (speed vs accuracy):
 | `small` | ~460MB | ⚡ | ⭐⭐⭐⭐ | **Default (recommended)** |
 | `medium` | ~1.5GB | 🐌 | ⭐⭐⭐⭐⭐ | Maximum accuracy |
 
-Edit the service file and change `-m small` to your preferred model:
+Change model in config file:
 
 ```bash
-nano ~/.config/systemd/user/voice-daemon.service
-# Change: -m small  →  -m medium
-systemctl --user daemon-reload
+voice-ctl edit
+# Change: model = small  →  model = medium
 voice-ctl restart
-```
-
-### Advanced Settings
-
-Edit `voice-daemon.py` directly to customize:
-
-```python
-# Audio configuration (lines 25-36)
-SILENCE_THRESHOLD_RMS = 400  # Microphone sensitivity
-SILENCE_DURATION_SECONDS = 5.0  # Stop after X seconds of silence
-MAX_RECORDING_DURATION_SECONDS = 3600  # Max 1 hour recording
 ```
 
 ## 🏗️ Architecture
