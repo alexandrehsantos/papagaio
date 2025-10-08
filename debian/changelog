@@ -1,4 +1,18 @@
-whisper-voice-daemon (1.0.1-1) unstable; urgency=medium
+whisper-voice-daemon (1.1.0-1ubuntu1) focal; urgency=medium
+
+  * New upstream release
+  * Packaging and distribution support
+  * PyPI package support
+  * Debian package with full structure
+  * AUR PKGBUILD for Arch Linux
+  * Interactive installer with distro detection
+  * Uninstaller script
+  * Configuration file support
+  * Enhanced voice-ctl commands
+
+ -- Alexandre Santos <alexandrehsantos@example.com>  Tue, 08 Oct 2025 22:40:00 -0300
+
+whisper-voice-daemon (1.0.1-1ubuntu1) focal; urgency=medium
 
   * Initial release
   * Global hotkey support (Ctrl+Alt+V)
@@ -6,6 +20,5 @@ whisper-voice-daemon (1.0.1-1) unstable; urgency=medium
   * Manual stop and cancel features
   * Bilingual interface (English/Portuguese)
   * Systemd integration
-  * Professional installer
 
- -- Alexandre Santos <alexandrehsantos@example.com>  Wed, 08 Oct 2025 00:00:00 -0300
+ -- Alexandre Santos <alexandrehsantos@example.com>  Tue, 08 Oct 2025 18:00:00 -0300

@@ -69,12 +69,16 @@ sudo apt install -f
 yay -S whisper-voice-daemon
 ```
 
-**Ubuntu PPA (planned):**
+**Ubuntu PPA:**
+
+After PPA publication, installation will be:
 ```bash
 sudo add-apt-repository ppa:alexandrehsantos/whisper-voice-daemon
 sudo apt update
 sudo apt install whisper-voice-daemon
 ```
+
+To publish to PPA, see: [docs/PPA-GUIDE.md](docs/PPA-GUIDE.md)
 
 ### Supported Distributions
 
