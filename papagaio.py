@@ -56,7 +56,13 @@ MESSAGES = {
         "press_hotkey_manual": "Press hotkey again to stop manually, or ESC to cancel",
         "speak_duration": "You can speak for up to 1 HOUR continuously!",
         "press_ctrl_c": "Press Ctrl+C to stop the daemon",
-        "notification_ready": "Press {hotkey} and speak - stops when you stop talking"
+        "notification_ready": "Press {hotkey} and speak - stops when you stop talking",
+        "notification_title": "Voice Input",
+        "notification_title_daemon": "Papagaio (VAD)",
+        "notification_title_stopped": "Papagaio",
+        "notification_stopped": "Stopped",
+        "notification_transcribing": "🔄 Transcribing...",
+        "error_prefix": "✗ Error"
     },
     "pt": {
         "speak_now": "🎤 Fale agora...",
@@ -78,18 +84,25 @@ MESSAGES = {
         "press_hotkey_manual": "Pressione o atalho novamente para parar manualmente, ou ESC para cancelar",
         "speak_duration": "Você pode falar por até 1 HORA continuamente!",
         "press_ctrl_c": "Pressione Ctrl+C para parar o daemon",
-        "notification_ready": "Pressione {hotkey} e fale - para quando você parar de falar"
+        "notification_ready": "Pressione {hotkey} e fale - para quando você parar de falar",
+        "notification_title": "Entrada de Voz",
+        "notification_title_daemon": "Papagaio (VAD)",
+        "notification_title_stopped": "Papagaio",
+        "notification_stopped": "Parado",
+        "notification_transcribing": "🔄 Transcrevendo...",
+        "error_prefix": "✗ Erro"
     }
 }
 
 
 class VoiceDaemon:
-    def __init__(self, model_size="small", hotkey="<ctrl>+<alt>+v", use_ydotool=False, model_cache_dir=None, lang="en"):
+    def __init__(self, model_size="small", hotkey="<ctrl>+<alt>+v", use_ydotool=False, model_cache_dir=None, lang="en", transcription_lang="auto"):
         self.model_size = model_size
         self.hotkey = hotkey
         self.use_ydotool = use_ydotool
         self.model_cache_dir = model_cache_dir or "/mnt/development/.whisper-cache"
         self.lang = lang if lang in MESSAGES else "en"
+        self.transcription_lang = None if transcription_lang == "auto" else transcription_lang
         self.model = None
         self.is_recording = False
         self.stop_recording_flag = False  # For manual stop (hotkey pressed again)
@@ -155,7 +168,7 @@ class VoiceDaemon:
 
             print(f"[Papagaio] {self.msg('speak_now')}")
             print(f"[Papagaio] {self.msg('press_hotkey_manual')}")
-            self.show_notification("Voice Input", self.msg("speak_now") + "\n" + self.msg("press_again_to_stop").format(hotkey=self.hotkey), "low")
+            self.show_notification(self.msg("notification_title"), self.msg("speak_now") + "\n" + self.msg("press_again_to_stop").format(hotkey=self.hotkey), "low")
 
             frames = []
             silence_chunks = 0
@@ -168,7 +181,7 @@ class VoiceDaemon:
                     # Check for manual stop or cancel flags
                     if self.cancel_recording_flag:
                         print(f"\n[Papagaio] {self.msg('cancelled')}")
-                        self.show_notification("Voice Input", self.msg("cancelled"), "normal")
+                        self.show_notification(self.msg("notification_title"), self.msg("cancelled"), "normal")
                         return None
 
                     if self.stop_recording_flag:
@@ -230,14 +243,14 @@ class VoiceDaemon:
 
         segments, info = self.model.transcribe(
             audio_file,
-            language="pt",
+            language=self.transcription_lang,
             beam_size=5,
             vad_filter=True,
             vad_parameters={
-                "threshold": 0.3,  # Lower threshold - more sensitive
-                "min_speech_duration_ms": 200,  # Minimum 200ms of speech
-                "min_silence_duration_ms": 500,  # 500ms silence = end of speech
-                "speech_pad_ms": 400  # Add padding around speech
+                "threshold": 0.3,
+                "min_speech_duration_ms": 200,
+                "min_silence_duration_ms": 500,
+                "speech_pad_ms": 400
             }
         )
 
@@ -358,8 +371,8 @@ class VoiceDaemon:
                 self.stop_esc_listener()
 
                 if audio_file:
-                    print("[Papagaio] 🔄 Transcribing...")
-                    self.show_notification("Voice Input", "🔄 Transcribing...", "low")
+                    print(f"[Papagaio] {self.msg('notification_transcribing')}")
+                    self.show_notification(self.msg("notification_title"), self.msg("notification_transcribing"), "low")
 
                     text = self.transcribe(audio_file)
                     os.unlink(audio_file)
@@ -367,17 +380,17 @@ class VoiceDaemon:
                     if text and len(text) > MIN_VALID_TRANSCRIPTION_LENGTH:
                         print(f"[Papagaio] {self.msg('transcribed')}: {text}")
                         self.type_text(text)
-                        self.show_notification("Voice Input", f"✓ {text[:50]}", "normal")
+                        self.show_notification(self.msg("notification_title"), f"✓ {text[:50]}", "normal")
                     else:
                         print(f"[Papagaio] {self.msg('no_speech')}")
-                        self.show_notification("Voice Input", self.msg("no_speech"), "normal")
+                        self.show_notification(self.msg("notification_title"), self.msg("no_speech"), "normal")
                 else:
                     print(f"[Papagaio] {self.msg('no_audio')}")
-                    self.show_notification("Voice Input", self.msg("no_speech"), "normal")
+                    self.show_notification(self.msg("notification_title"), self.msg("no_speech"), "normal")
 
             except Exception as e:
-                print(f"[Papagaio] ✗ Error: {e}")
-                self.show_notification("Voice Input", f"✗ Error: {str(e)}", "critical")
+                print(f"[Papagaio] {self.msg('error_prefix')}: {e}")
+                self.show_notification(self.msg("notification_title"), f"{self.msg('error_prefix')}: {str(e)}", "critical")
             finally:
                 self.stop_esc_listener()
                 self.is_recording = False
@@ -436,12 +449,15 @@ class VoiceDaemon:
         except:
             tool_name = "xdotool (X11)"
 
+        transcription_display = self.transcription_lang if self.transcription_lang else "auto-detect"
+
         print("=" * 60)
         print(self.msg("started"))
         print("=" * 60)
         print(f"Hotkey: {self.hotkey}")
         print(f"Model: Whisper {self.model_size}")
-        print(f"Language: {self.lang}")
+        print(f"Interface Language: {self.lang}")
+        print(f"Transcription Language: {transcription_display}")
         print(f"Typing tool: {tool_name}")
         print(self.msg("mode"))
         print(self.msg("silence_threshold"))
@@ -457,7 +473,7 @@ class VoiceDaemon:
         self.initialize_model()
 
         self.show_notification(
-            "Papagaio (VAD)",
+            self.msg("notification_title_daemon"),
             f"✓ {self.msg('notification_ready').format(hotkey=self.hotkey)}",
             "normal"
         )
@@ -472,7 +488,7 @@ class VoiceDaemon:
             print("\n[Papagaio] Stopping...")
         finally:
             self.remove_pid()
-            self.show_notification("Papagaio", "Stopped", "low")
+            self.show_notification(self.msg("notification_title_stopped"), self.msg("notification_stopped"), "low")
 
 
 def main():
@@ -501,10 +517,21 @@ def main():
         choices=["en", "pt"],
         help="Interface language (default: en - English, pt - Portuguese)"
     )
+    parser.add_argument(
+        "-t", "--transcription-lang",
+        default="auto",
+        help="Transcription language (default: auto - auto-detect, or specify: en, pt, es, fr, de, etc.)"
+    )
 
     args = parser.parse_args()
 
-    daemon = VoiceDaemon(model_size=args.model, hotkey=args.hotkey, use_ydotool=args.ydotool, lang=args.lang)
+    daemon = VoiceDaemon(
+        model_size=args.model,
+        hotkey=args.hotkey,
+        use_ydotool=args.ydotool,
+        lang=args.lang,
+        transcription_lang=args.transcription_lang
+    )
 
     # Handle signals
     def signal_handler(sig, frame):
