@@ -23,7 +23,7 @@
 
 **Command:**
 ```bash
-cd /mnt/development/git/personal/papagaio
+cd /path/to/papagaio
 ./packaging/build-pypi.sh prod
 ```
 

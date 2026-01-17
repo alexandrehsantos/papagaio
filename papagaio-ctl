@@ -54,10 +54,10 @@ case "$1" in
             print_success "Voice daemon started"
             hotkey=$(get_hotkey)
             print_info "Press ${CYAN}$hotkey${NC} to use voice input"
-            print_info "Use ${CYAN}voice-ctl status${NC} to check status"
+            print_info "Use ${CYAN}papagaio-ctl status${NC} to check status"
         else
             print_error "Failed to start daemon"
-            print_info "Try: ${CYAN}voice-ctl test${NC} for debugging"
+            print_info "Try: ${CYAN}papagaio-ctl test${NC} for debugging"
             exit 1
         fi
         ;;
@@ -90,7 +90,7 @@ case "$1" in
             print_info "Hotkey: ${CYAN}$hotkey${NC}"
         else
             print_warning "Daemon is not running"
-            print_info "Start with: ${CYAN}voice-ctl start${NC}"
+            print_info "Start with: ${CYAN}papagaio-ctl start${NC}"
         fi
         ;;
     logs)
@@ -142,7 +142,7 @@ case "$1" in
             cat "$CONFIG_FILE"
             echo ""
             print_info "Edit: ${CYAN}nano $CONFIG_FILE${NC}"
-            print_info "After editing, restart: ${CYAN}voice-ctl restart${NC}"
+            print_info "After editing, restart: ${CYAN}papagaio-ctl restart${NC}"
         else
             print_warning "Config file not found"
             print_info "Expected location: $CONFIG_FILE"
@@ -151,7 +151,7 @@ case "$1" in
     edit)
         if [ -f "$CONFIG_FILE" ]; then
             ${EDITOR:-nano} "$CONFIG_FILE"
-            print_info "Don't forget to restart: ${CYAN}voice-ctl restart${NC}"
+            print_info "Don't forget to restart: ${CYAN}papagaio-ctl restart${NC}"
         else
             print_error "Config file not found: $CONFIG_FILE"
             exit 1
@@ -169,7 +169,7 @@ case "$1" in
         echo -e "${BOLD}${BLUE}Papagaio Control${NC}"
         echo ""
         echo -e "${BOLD}USAGE:${NC}"
-        echo "  voice-ctl [command]"
+        echo "  papagaio-ctl [command]"
         echo ""
         echo -e "${BOLD}COMMANDS:${NC}"
         echo -e "  ${CYAN}start${NC}      - Start the voice daemon"
@@ -186,12 +186,12 @@ case "$1" in
         echo -e "  ${CYAN}help${NC}       - Show this help message"
         echo ""
         echo -e "${BOLD}EXAMPLES:${NC}"
-        echo "  voice-ctl start           # Start daemon"
-        echo "  voice-ctl logs            # Watch logs"
-        echo "  voice-ctl test            # Test in foreground"
+        echo "  papagaio-ctl start           # Start daemon"
+        echo "  papagaio-ctl logs            # Watch logs"
+        echo "  papagaio-ctl test            # Test in foreground"
         echo ""
         echo -e "${BOLD}USAGE INSTRUCTIONS:${NC}"
-        echo "  1. Start daemon: ${CYAN}voice-ctl start${NC}"
+        echo "  1. Start daemon: ${CYAN}papagaio-ctl start${NC}"
         hotkey=$(get_hotkey)
         echo "  2. Press hotkey: ${YELLOW}$hotkey${NC}"
         echo "  3. Speak clearly"
@@ -202,7 +202,7 @@ case "$1" in
         echo ""
         echo -e "${BOLD}CONFIGURATION:${NC}"
         echo "  Config file: $CONFIG_FILE"
-        echo "  Edit with:   ${CYAN}voice-ctl edit${NC}"
+        echo "  Edit with:   ${CYAN}papagaio-ctl edit${NC}"
         echo ""
         echo -e "${BOLD}DOCUMENTATION:${NC}"
         echo "  GitHub: https://github.com/alexandrehsantos/whisper-papagaio"
@@ -211,12 +211,12 @@ case "$1" in
     *)
         print_error "Unknown command: $1"
         echo ""
-        echo "Usage: voice-ctl [command]"
+        echo "Usage: papagaio-ctl [command]"
         echo ""
         echo "Common commands:"
         echo "  start, stop, restart, status, logs"
         echo ""
-        echo "For full help: ${CYAN}voice-ctl help${NC}"
+        echo "For full help: ${CYAN}papagaio-ctl help${NC}"
         exit 1
         ;;
 esac

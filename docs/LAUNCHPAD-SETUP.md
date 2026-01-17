@@ -1,6 +1,6 @@
 # Launchpad Setup Guide
 
-Complete guide to register Whisper Voice Daemon on Launchpad for PPA publishing.
+Complete guide to register Papagaio on Launchpad for PPA publishing.
 
 ## Step 1: Create Launchpad Account
 
@@ -25,7 +25,7 @@ Complete guide to register Whisper Voice Daemon on Launchpad for PPA publishing.
 **Project Details:**
 - **URL:** `papagaio`
   - This will be: https://launchpad.net/papagaio
-- **Display Name:** `Whisper Voice Daemon`
+- **Display Name:** `Papagaio`
 - **Summary (one line):**
   ```
   Voice-to-text daemon for Linux using Whisper speech recognition
@@ -141,7 +141,7 @@ Upload to Launchpad:
 **PPA Details:**
 - **URL:** `papagaio`
   - Final PPA: `ppa:your-username/papagaio`
-- **Display name:** `Whisper Voice Daemon`
+- **Display name:** `Papagaio`
 - **Description:**
   ```
   Voice-to-text daemon for Linux using Whisper speech recognition.
@@ -180,7 +180,7 @@ allow_unsigned_uploads = 0
 ## Step 6: Build and Upload First Package
 
 ```bash
-cd /mnt/development/git/personal/papagaio
+cd /path/to/papagaio
 
 # Build source package
 debuild -S -sa

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Whisper Voice Daemon - Professional Linux Installer
+# Papagaio - Professional Linux Installer
 # Supports: Ubuntu, Debian, Fedora, Arch Linux, openSUSE
 #
 
@@ -35,7 +35,7 @@ DEFAULT_AUTOSTART="yes"
 print_header() {
     echo -e "${BLUE}${BOLD}"
     echo "============================================================"
-    echo "  Whisper Voice Daemon - Linux Installer"
+    echo "  Papagaio - Linux Installer"
     echo "  Version 1.1.0"
     echo "============================================================"
     echo -e "${NC}"
@@ -281,7 +281,7 @@ create_systemd_service() {
 
     cat > "$service_file" << EOF
 [Unit]
-Description=Whisper Voice Daemon - Voice-to-Text Input
+Description=Papagaio - Voice-to-Text Input
 Documentation=https://github.com/alexandrehsantos/papagaio
 After=graphical-session.target
 
@@ -324,7 +324,7 @@ add_to_path() {
         fi
 
         echo '' >> "$shell_config"
-        echo '# Added by Whisper Voice Daemon installer' >> "$shell_config"
+        echo '# Added by Papagaio installer' >> "$shell_config"
         echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$shell_config"
 
         print_success "Added to PATH in $shell_config"
@@ -338,7 +338,7 @@ create_config_file() {
     local config_file="$CONFIG_DIR/config.ini"
 
     cat > "$config_file" << EOF
-# Whisper Voice Daemon Configuration
+# Papagaio Configuration
 # Edit this file to customize settings
 
 [General]

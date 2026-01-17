@@ -185,7 +185,7 @@ echo "text" | xclip -selection clipboard
 
 ### Model Storage
 
-**Cache Directory:** `/mnt/development/.whisper-cache/`
+**Cache Directory:** `~/.cache/whisper-models/`
 
 **Structure:**
 ```
@@ -248,7 +248,7 @@ After=graphical-session.target
 [Service]
 Type=simple
 Environment="DISPLAY=:0"
-Environment="XAUTHORITY=/home/fns/.Xauthority"
+Environment="XAUTHORITY=$HOME/.Xauthority"
 ExecStart=/usr/bin/python3 /path/to/papagaio.py -m small
 Restart=on-failure
 RestartSec=5

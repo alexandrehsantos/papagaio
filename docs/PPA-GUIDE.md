@@ -1,6 +1,6 @@
 # Ubuntu PPA Publishing Guide
 
-Complete guide to publish Whisper Voice Daemon on Ubuntu PPA (Personal Package Archive).
+Complete guide to publish Papagaio on Ubuntu PPA (Personal Package Archive).
 
 After publication, users can install with:
 ```bash
@@ -63,7 +63,7 @@ Upload to Launchpad:
 1. Go to https://launchpad.net/~your-username/+activate-ppa
 2. Fill in:
    - **URL:** papagaio
-   - **Display name:** Whisper Voice Daemon
+   - **Display name:** Papagaio
    - **Description:**
      ```
      Voice-to-text daemon for Linux using Whisper speech recognition.
@@ -81,7 +81,7 @@ Upload to Launchpad:
 ### Method 1: Using Build Script (Recommended)
 
 ```bash
-cd /mnt/development/git/personal/papagaio
+cd /path/to/papagaio
 
 # Build and upload
 ./packaging/build-ppa.sh ppa:your-username/papagaio
@@ -105,7 +105,7 @@ Supported Ubuntu releases:
 #### Step 2: Build Source Package
 
 ```bash
-cd /mnt/development/git/personal/papagaio
+cd /path/to/papagaio
 
 # Clean previous builds
 rm -f ../*.deb ../*.build ../*.changes ../*.dsc ../*.tar.*

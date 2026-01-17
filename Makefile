@@ -8,7 +8,7 @@ VERSION := 1.0.1
 
 # Default target
 help:
-	@echo "Whisper Voice Daemon - Build System"
+	@echo "Papagaio - Build System"
 	@echo ""
 	@echo "Usage: make [target]"
 	@echo ""
@@ -32,27 +32,27 @@ help:
 	@echo ""
 
 install:
-	@echo "Installing Whisper Voice Daemon..."
+	@echo "Installing Papagaio..."
 	./install.sh
 
 uninstall:
-	@echo "Uninstalling Whisper Voice Daemon..."
+	@echo "Uninstalling Papagaio..."
 	./uninstall.sh
 
 test:
 	@echo "Testing daemon in foreground mode..."
-	$(PYTHON) voice-daemon.py -m small
+	$(PYTHON) papagaio.py -m small
 
 lint:
 	@echo "Running linters..."
 	@which flake8 > /dev/null || $(PIP) install --user flake8
-	flake8 voice-daemon.py --max-line-length=120 --ignore=E501,W503 || true
+	flake8 papagaio.py --max-line-length=120 --ignore=E501,W503 || true
 	@echo "✓ Lint complete"
 
 format:
 	@echo "Formatting code..."
 	@which black > /dev/null || $(PIP) install --user black
-	black voice-daemon.py --line-length=120
+	black papagaio.py --line-length=120
 	@echo "✓ Format complete"
 
 clean:

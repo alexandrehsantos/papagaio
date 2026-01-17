@@ -1,4 +1,4 @@
-# Whisper Voice Daemon - Python Dependencies
+# Papagaio - Python Dependencies
 
 # Speech Recognition (Whisper AI)
 faster-whisper>=1.0.0

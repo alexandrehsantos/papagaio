@@ -6,8 +6,8 @@
 override_dh_auto_install:
 	dh_auto_install
 	# Install scripts
-	install -D -m 755 voice-daemon.py debian/papagaio/usr/bin/voice-daemon
-	install -D -m 755 voice-ctl debian/papagaio/usr/bin/voice-ctl
+	install -D -m 755 papagaio.py debian/papagaio/usr/bin/papagaio
+	install -D -m 755 papagaio-ctl debian/papagaio/usr/bin/papagaio-ctl
 	install -D -m 755 install.sh debian/papagaio/usr/share/papagaio/install.sh
 	install -D -m 755 uninstall.sh debian/papagaio/usr/share/papagaio/uninstall.sh
 	# Install documentation

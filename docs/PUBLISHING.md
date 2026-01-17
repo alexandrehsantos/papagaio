@@ -1,6 +1,6 @@
 # Publishing Guide
 
-This guide explains how to publish Whisper Voice Daemon to various package repositories.
+This guide explains how to publish Papagaio to various package repositories.
 
 ## Package Distribution Methods
 

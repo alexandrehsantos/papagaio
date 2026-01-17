@@ -1,6 +1,6 @@
-# Contributing to Whisper Voice Daemon
+# Contributing to Papagaio
 
-Thank you for considering contributing to Whisper Voice Daemon! This document provides guidelines and instructions for contributing.
+Thank you for considering contributing to Papagaio! This document provides guidelines and instructions for contributing.
 
 ## 🤝 Code of Conduct
 

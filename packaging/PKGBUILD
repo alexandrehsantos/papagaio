@@ -43,8 +43,8 @@ package() {
     cd "$srcdir/$pkgname-$pkgver"
 
     # Install main script
-    install -Dm755 voice-daemon.py "$pkgdir/usr/bin/voice-daemon"
-    install -Dm755 voice-ctl "$pkgdir/usr/bin/voice-ctl"
+    install -Dm755 papagaio.py "$pkgdir/usr/bin/papagaio"
+    install -Dm755 papagaio-ctl "$pkgdir/usr/bin/papagaio-ctl"
 
     # Install helper scripts
     install -Dm755 install.sh "$pkgdir/usr/share/$pkgname/install.sh"

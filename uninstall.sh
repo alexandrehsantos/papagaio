@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Whisper Voice Daemon - Uninstaller
+# Papagaio - Uninstaller
 #
 
 set -e
@@ -24,7 +24,7 @@ SERVICE_DIR="$HOME/.config/systemd/user"
 print_header() {
     echo -e "${RED}${BOLD}"
     echo "============================================================"
-    echo "  Whisper Voice Daemon - Uninstaller"
+    echo "  Papagaio - Uninstaller"
     echo "============================================================"
     echo -e "${NC}"
 }
@@ -133,14 +133,14 @@ check_path_entry() {
     local shell_configs=("$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile")
 
     for config in "${shell_configs[@]}"; do
-        if [ -f "$config" ] && grep -q "Added by Whisper Voice Daemon installer" "$config"; then
+        if [ -f "$config" ] && grep -q "Added by Papagaio installer" "$config"; then
             print_info "Found PATH entry in $config"
             echo -e -n "${YELLOW}Remove PATH entry?${NC} [yes/NO]: "
             read response
 
             if [ "$response" = "yes" ]; then
                 # Remove the lines
-                sed -i '/Added by Whisper Voice Daemon installer/,+1d' "$config"
+                sed -i '/Added by Papagaio installer/,+1d' "$config"
                 print_success "Removed PATH entry from $config"
                 print_info "Restart terminal for changes to take effect"
             fi
@@ -159,7 +159,7 @@ print_final_info() {
     echo "  ✓ Installation files"
     echo "  ✓ Command-line tools"
     echo ""
-    print_info "Thank you for using Whisper Voice Daemon!"
+    print_info "Thank you for using Papagaio!"
     echo ""
     print_info "To reinstall: ./install.sh"
     echo ""

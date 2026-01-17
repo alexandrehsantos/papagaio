@@ -158,7 +158,7 @@ vim document.txt
 
 ## Uninstallation
 
-To completely remove Whisper Voice Daemon:
+To completely remove Papagaio:
 
 ```bash
 cd papagaio

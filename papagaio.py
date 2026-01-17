@@ -88,7 +88,7 @@ class VoiceDaemon:
         self.model_size = model_size
         self.hotkey = hotkey
         self.use_ydotool = use_ydotool
-        self.model_cache_dir = model_cache_dir or "/mnt/development/.whisper-cache"
+        self.model_cache_dir = model_cache_dir or os.path.expanduser("~/.cache/whisper-models")
         self.lang = lang if lang in MESSAGES else "en"
         self.model = None
         self.is_recording = False
@@ -230,7 +230,6 @@ class VoiceDaemon:
 
         segments, info = self.model.transcribe(
             audio_file,
-            language="pt",
             beam_size=5,
             vad_filter=True,
             vad_parameters={
