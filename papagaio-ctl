@@ -157,6 +157,19 @@ case "$1" in
             exit 1
         fi
         ;;
+    settings)
+        SETTINGS_SCRIPT="$INSTALL_DIR/papagaio-settings.py"
+        if [ ! -f "$SETTINGS_SCRIPT" ]; then
+            SETTINGS_SCRIPT="$(dirname "$0")/papagaio-settings.py"
+        fi
+        if [ -f "$SETTINGS_SCRIPT" ]; then
+            /usr/bin/python3 "$SETTINGS_SCRIPT" &
+            print_success "Settings window opened"
+        else
+            print_error "Settings GUI not found"
+            exit 1
+        fi
+        ;;
     version)
         if [ -f "$DAEMON_SCRIPT" ]; then
             version=$(grep -m 1 "^# Version" "$DAEMON_SCRIPT" | cut -d' ' -f3 || echo "unknown")
@@ -182,6 +195,7 @@ case "$1" in
         echo -e "  ${CYAN}test${NC}       - Run daemon in foreground (debug mode)"
         echo -e "  ${CYAN}config${NC}     - Show current configuration"
         echo -e "  ${CYAN}edit${NC}       - Edit configuration file"
+        echo -e "  ${CYAN}settings${NC}   - Open graphical settings"
         echo -e "  ${CYAN}version${NC}    - Show version information"
         echo -e "  ${CYAN}help${NC}       - Show this help message"
         echo ""

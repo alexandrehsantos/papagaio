@@ -563,36 +563,75 @@ class VoiceDaemon:
             self.show_notification("Papagaio", "Stopped", "low")
 
 
+def load_config():
+    """Load configuration from config file"""
+    import configparser
+    config_file = os.path.expanduser("~/.config/papagaio/config.ini")
+
+    defaults = {
+        'model': 'small',
+        'language': 'en',
+        'hotkey': '<ctrl>+<shift>+<alt>+v',
+        'use_ydotool': False,
+        'cache_dir': os.path.expanduser("~/.cache/whisper-models")
+    }
+
+    if os.path.exists(config_file):
+        config = configparser.ConfigParser()
+        config.read(config_file)
+
+        if 'General' in config:
+            defaults['model'] = config['General'].get('model', defaults['model'])
+            defaults['language'] = config['General'].get('language', defaults['language'])
+            defaults['hotkey'] = config['General'].get('hotkey', defaults['hotkey'])
+            defaults['cache_dir'] = config['General'].get('cache_dir', defaults['cache_dir'])
+
+        if 'Advanced' in config:
+            defaults['use_ydotool'] = config['Advanced'].get('use_ydotool', 'false').lower() == 'true'
+
+    return defaults
+
+
 def main():
     import argparse
+
+    # Load config file defaults
+    config = load_config()
 
     parser = argparse.ArgumentParser(description="Voice Input Daemon (cross-platform)")
     parser.add_argument(
         "-m", "--model",
-        default="small",
+        default=config['model'],
         choices=["tiny", "base", "small", "medium"],
-        help="Whisper model size (default: small for better accuracy)"
+        help="Whisper model size (default: from config or small)"
     )
     parser.add_argument(
         "-k", "--hotkey",
-        default="<ctrl>+<shift>+<alt>+v",
-        help="Global hotkey (default: Ctrl+Shift+Alt+V)"
+        default=config['hotkey'],
+        help="Global hotkey (default: from config or Ctrl+Shift+Alt+V)"
     )
     parser.add_argument(
         "--ydotool",
         action="store_true",
+        default=config['use_ydotool'],
         help="Force use of ydotool instead of xdotool"
     )
     parser.add_argument(
         "-l", "--lang",
-        default="en",
+        default=config['language'],
         choices=["en", "pt"],
-        help="Interface language (default: en - English, pt - Portuguese)"
+        help="Interface language (default: from config or en)"
     )
 
     args = parser.parse_args()
 
-    daemon = VoiceDaemon(model_size=args.model, hotkey=args.hotkey, use_ydotool=args.ydotool, lang=args.lang)
+    daemon = VoiceDaemon(
+        model_size=args.model,
+        hotkey=args.hotkey,
+        use_ydotool=args.ydotool,
+        model_cache_dir=config['cache_dir'],
+        lang=args.lang
+    )
 
     # Handle signals
     def signal_handler(sig, frame):

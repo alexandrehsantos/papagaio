@@ -263,8 +263,17 @@ install_files() {
     cp "$SCRIPT_DIR/papagaio-ctl" "$INSTALL_DIR/papagaio-ctl"
     chmod +x "$INSTALL_DIR/papagaio-ctl"
 
-    # Create symlink in PATH
+    # Copy settings GUI
+    cp "$SCRIPT_DIR/papagaio-settings.py" "$INSTALL_DIR/papagaio-settings.py"
+    chmod +x "$INSTALL_DIR/papagaio-settings.py"
+
+    # Create symlinks in PATH
     ln -sf "$INSTALL_DIR/papagaio-ctl" "$BIN_DIR/papagaio-ctl"
+    ln -sf "$INSTALL_DIR/papagaio-settings.py" "$BIN_DIR/papagaio-settings"
+
+    # Install desktop file for application menu
+    mkdir -p "$HOME/.local/share/applications"
+    cp "$SCRIPT_DIR/papagaio-settings.desktop" "$HOME/.local/share/applications/"
 
     # Copy requirements
     if [ -f "$SCRIPT_DIR/requirements.txt" ]; then
