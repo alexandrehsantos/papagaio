@@ -232,7 +232,7 @@ MAX_RECORDING_DURATION_SECONDS = 3600  # Max 1 hour
 ```bash
 python3 papagaio.py \
     -m small \                  # Model size
-    -k "<ctrl>+<alt>+v" \      # Hotkey
+    -k "<ctrl>+<shift>+<alt>+v" \      # Hotkey
     --ydotool                  # Force ydotool
 ```
 

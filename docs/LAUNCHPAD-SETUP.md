@@ -36,7 +36,7 @@ Complete guide to register Papagaio on Launchpad for PPA publishing.
 Voice-to-text daemon for Linux with global hotkey support.
 
 Features:
-- Global hotkey activation (Ctrl+Alt+V)
+- Global hotkey activation (Ctrl+Shift+Alt+V)
 - Local processing only (privacy-first)
 - Voice Activity Detection (VAD) with automatic silence detection
 - Manual control (stop with hotkey, cancel with ESC)
@@ -152,7 +152,7 @@ Upload to Launchpad:
     sudo apt install papagaio
 
   Features:
-  - Global hotkey support (Ctrl+Alt+V)
+  - Global hotkey support (Ctrl+Shift+Alt+V)
   - 100% local processing (privacy-first)
   - Voice Activity Detection
   - Bilingual interface (English/Portuguese)

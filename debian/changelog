@@ -15,7 +15,7 @@ papagaio (1.1.0-1ubuntu1) focal; urgency=medium
 papagaio (1.0.1-1ubuntu1) focal; urgency=medium
 
   * Initial release
-  * Global hotkey support (Ctrl+Alt+V)
+  * Global hotkey support (Ctrl+Shift+Alt+V)
   * Voice Activity Detection (VAD)
   * Manual stop and cancel features
   * Bilingual interface (English/Portuguese)

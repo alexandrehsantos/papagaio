@@ -23,7 +23,7 @@ Description: Voice-to-text daemon for Linux using OpenAI Whisper
  model.
  .
  Features:
-  * Global hotkey support (Ctrl+Alt+V)
+  * Global hotkey support (Ctrl+Shift+Alt+V)
   * 100% local processing (privacy-first)
   * Voice Activity Detection (VAD)
   * Manual control (stop/cancel)

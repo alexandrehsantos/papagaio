@@ -104,7 +104,7 @@ MESSAGES = {
 
 
 class VoiceDaemon:
-    def __init__(self, model_size="small", hotkey="<ctrl>+<alt>+v", use_ydotool=False, model_cache_dir=None, lang="en"):
+    def __init__(self, model_size="small", hotkey="<ctrl>+<shift>+<alt>+v", use_ydotool=False, model_cache_dir=None, lang="en"):
         self.model_size = model_size
         self.hotkey = hotkey
         self.use_ydotool = use_ydotool
@@ -575,8 +575,8 @@ def main():
     )
     parser.add_argument(
         "-k", "--hotkey",
-        default="<ctrl>+<alt>+v",
-        help="Global hotkey (default: Ctrl+Alt+V)"
+        default="<ctrl>+<shift>+<alt>+v",
+        help="Global hotkey (default: Ctrl+Shift+Alt+V)"
     )
     parser.add_argument(
         "--ydotool",

@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Initial Release
 
 #### Added
-- Global hotkey support (Ctrl+Alt+V)
+- Global hotkey support (Ctrl+Shift+Alt+V)
 - Voice Activity Detection (VAD) with automatic silence detection
 - Faster-Whisper integration for speech recognition
 - Systemd user service integration

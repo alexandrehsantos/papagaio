@@ -43,7 +43,7 @@ get_hotkey() {
     if [ -f "$CONFIG_FILE" ]; then
         grep "^hotkey" "$CONFIG_FILE" | cut -d'=' -f2 | tr -d ' '
     else
-        echo "Ctrl+Alt+V"
+        echo "Ctrl+Shift+Alt+V"
     fi
 }
 

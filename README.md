@@ -9,7 +9,7 @@ Papagaio runs as a background service and transcribes speech to text. Press a gl
 
 ## Features
 
-- Global hotkey activation (default: Ctrl+Alt+V)
+- Global hotkey activation (default: Ctrl+Shift+Alt+V)
 - Local processing only (no cloud services, privacy-first)
 - Voice Activity Detection with automatic silence detection
 - Manual stop (press hotkey again) or cancel (ESC)
@@ -71,11 +71,11 @@ papagaio-ctl test       # Run in foreground (debug)
 ### Voice Input
 
 1. Start the daemon: `papagaio-ctl start`
-2. Press `Ctrl+Alt+V` in any application
+2. Press `Ctrl+Shift+Alt+V` in any application
 3. Speak clearly
 4. Stop recording:
    - Wait 5 seconds (auto-stop on silence)
-   - Press `Ctrl+Alt+V` again (manual stop)
+   - Press `Ctrl+Shift+Alt+V` again (manual stop)
    - Press `ESC` (cancel)
 5. Text is typed at cursor position
 
@@ -87,7 +87,7 @@ Configuration file: `~/.config/papagaio/config.ini`
 [General]
 model = small
 language = en
-hotkey = <ctrl>+<alt>+v
+hotkey = <ctrl>+<shift>+<alt>+v
 cache_dir = ~/.cache/whisper-models
 
 [Audio]
@@ -114,7 +114,7 @@ Edit with `papagaio-ctl edit`, then restart with `papagaio-ctl restart`.
 ## Architecture
 
 ```
-User presses Ctrl+Alt+V
+User presses Ctrl+Shift+Alt+V
          |
          v
   Hotkey Listener (pynput)
