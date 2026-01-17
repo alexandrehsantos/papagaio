@@ -3,11 +3,14 @@
 # Speech Recognition (Whisper AI)
 faster-whisper>=1.0.0
 
-# Hotkey Management
+# Hotkey Management and Keyboard Simulation
 pynput>=1.7.6
 
 # Audio Processing
 pyaudio>=0.2.13
+
+# Cross-platform Notifications (optional but recommended)
+plyer>=2.1.0
 
 # Optional: GPU acceleration (uncomment if you have CUDA)
 # torch>=2.0.0

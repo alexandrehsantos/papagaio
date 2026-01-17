@@ -10,16 +10,36 @@ import time
 import wave
 import struct
 import math
-import fcntl
+import platform
+import shutil
+
+# Platform detection
+IS_WINDOWS = platform.system() == 'Windows'
+IS_LINUX = platform.system() == 'Linux'
+IS_MACOS = platform.system() == 'Darwin'
+
+# Platform-specific imports for file locking
+if IS_WINDOWS:
+    import msvcrt
+else:
+    import fcntl
 
 try:
     from faster_whisper import WhisperModel
     from pynput import keyboard
+    from pynput.keyboard import Controller as KeyboardController, Key
     import pyaudio
 except ImportError as e:
     print(f"Missing required dependency: {e.name}")
     print("Please install dependencies: pip install faster-whisper pynput pyaudio")
     sys.exit(1)
+
+# Optional: cross-platform notifications
+try:
+    from plyer import notification as plyer_notification
+    HAS_PLYER = True
+except ImportError:
+    HAS_PLYER = False
 
 
 # Audio configuration constants
@@ -96,7 +116,7 @@ class VoiceDaemon:
         self.cancel_recording_flag = False  # For ESC key
         self.recording_thread = None
         self.esc_listener = None
-        self.pid_file = "/tmp/papagaio.pid"
+        self.pid_file = os.path.join(tempfile.gettempdir(), "papagaio.pid")
 
         # Audio settings for VAD
         self.CHUNK = CHUNK_SIZE
@@ -243,25 +263,40 @@ class VoiceDaemon:
         text = " ".join([segment.text.strip() for segment in segments])
         return text.strip()
 
+    def type_text_pynput(self, text):
+        """Type text using pynput (cross-platform)"""
+        if not text:
+            return False
+
+        try:
+            time.sleep(TYPING_DELAY_SECONDS)
+            kb = KeyboardController()
+            kb.type(text)
+            kb.press(Key.enter)
+            kb.release(Key.enter)
+            print(f"[Papagaio] ✓ Typed (pynput): {text[:50]}...")
+            return True
+        except Exception as e:
+            print(f"[Papagaio] pynput typing failed: {e}")
+            return False
+
     def type_text_ydotool(self, text):
         """Type text using ydotool (works with Wayland and X11)"""
         if not text:
-            return
+            return False
 
         try:
             # Check if ydotool is available
-            subprocess.run(["which", "ydotool"], check=True, capture_output=True)
+            if not shutil.which("ydotool"):
+                return False
 
-            # Small delay
             time.sleep(TYPING_DELAY_SECONDS)
 
-            # Type the text
             subprocess.run(
                 ["ydotool", "type", text],
                 check=True
             )
 
-            # Press Enter
             subprocess.run(["ydotool", "key", "28:1", "28:0"], check=True)
 
             print(f"[Papagaio] ✓ Typed (ydotool): {text[:50]}...")
@@ -273,9 +308,12 @@ class VoiceDaemon:
     def type_text_xdotool(self, text):
         """Type text using xdotool (X11 only)"""
         if not text:
-            return
+            return False
 
         try:
+            if not shutil.which("xdotool"):
+                return False
+
             time.sleep(TYPING_DELAY_SECONDS)
 
             subprocess.run(
@@ -291,29 +329,66 @@ class VoiceDaemon:
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
 
+    def type_text_clipboard(self, text):
+        """Copy text to clipboard as fallback"""
+        if not text:
+            return False
+
+        try:
+            if IS_WINDOWS:
+                # Windows: use clip command
+                subprocess.run("clip", input=text.encode('utf-16-le'), check=True, timeout=5)
+            elif IS_MACOS:
+                # macOS: use pbcopy
+                subprocess.run(["pbcopy"], input=text.encode(), check=True, timeout=5)
+            else:
+                # Linux: use xclip
+                subprocess.run(["xclip", "-selection", "clipboard"], input=text.encode(), check=True, timeout=5)
+            print("[Papagaio] ✓ Copied to clipboard as fallback")
+            return True
+        except (subprocess.SubprocessError, FileNotFoundError, OSError) as e:
+            print(f"[Papagaio] Clipboard fallback failed: {e}")
+            return False
+
     def type_text(self, text):
-        """Type text using available tool"""
-        # Always try xdotool first (more reliable)
-        if not self.type_text_xdotool(text):
-            print("[Papagaio] ⚠️  xdotool failed, trying ydotool")
-            if not self.type_text_ydotool(text):
-                print("[Papagaio] ✗ Both xdotool and ydotool failed")
-                # Fallback: copy to clipboard
-                try:
-                    subprocess.run(["xclip", "-selection", "clipboard"], input=text.encode(), check=True, timeout=5)
-                    print("[Papagaio] ✓ Copied to clipboard as fallback")
-                except (subprocess.SubprocessError, FileNotFoundError, OSError) as e:
-                    print(f"[Papagaio] ✗ All typing methods failed: {e}")
+        """Type text using available tool (cross-platform)"""
+        if IS_WINDOWS or IS_MACOS:
+            # On Windows and macOS, use pynput directly
+            if not self.type_text_pynput(text):
+                self.type_text_clipboard(text)
+        else:
+            # On Linux, try xdotool first (more reliable with special chars)
+            if not self.type_text_xdotool(text):
+                print("[Papagaio] ⚠️  xdotool failed, trying ydotool")
+                if not self.type_text_ydotool(text):
+                    print("[Papagaio] ⚠️  ydotool failed, trying pynput")
+                    if not self.type_text_pynput(text):
+                        self.type_text_clipboard(text)
 
     def show_notification(self, title, message, urgency="normal"):
-        """Show desktop notification"""
+        """Show desktop notification (cross-platform)"""
         try:
-            subprocess.run(
-                ["notify-send", "-u", urgency, title, message],
-                check=False,
-                timeout=5
-            )
-        except (subprocess.SubprocessError, FileNotFoundError, OSError):
+            if HAS_PLYER:
+                # Use plyer for cross-platform notifications
+                plyer_notification.notify(
+                    title=title,
+                    message=message,
+                    app_name="Papagaio",
+                    timeout=5
+                )
+            elif IS_LINUX:
+                # Linux fallback: notify-send
+                subprocess.run(
+                    ["notify-send", "-u", urgency, title, message],
+                    check=False,
+                    timeout=5
+                )
+            elif IS_MACOS:
+                # macOS fallback: osascript
+                script = f'display notification "{message}" with title "{title}"'
+                subprocess.run(["osascript", "-e", script], check=False, timeout=5)
+            # Windows without plyer: notifications silently skipped
+        except Exception:
             # Notifications are non-critical, silently continue
             pass
 
@@ -402,21 +477,32 @@ class VoiceDaemon:
         """Write PID to file with exclusive lock to prevent multiple instances"""
         try:
             self.pid_file_handle = open(self.pid_file, 'w')
-            fcntl.flock(self.pid_file_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            if IS_WINDOWS:
+                # Windows file locking using msvcrt
+                msvcrt.locking(self.pid_file_handle.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                # Unix file locking using fcntl
+                fcntl.flock(self.pid_file_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
             self.pid_file_handle.write(str(os.getpid()))
             self.pid_file_handle.flush()
-        except BlockingIOError:
-            print(f"[Papagaio] Another instance is already running (PID file locked)")
-            sys.exit(1)
-        except OSError as e:
-            print(f"[Papagaio] Failed to create PID file: {e}")
+        except (BlockingIOError, OSError) as e:
+            if isinstance(e, BlockingIOError) or (IS_WINDOWS and e.errno == 36):
+                print(f"[Papagaio] Another instance is already running (PID file locked)")
+            else:
+                print(f"[Papagaio] Failed to create PID file: {e}")
             sys.exit(1)
 
     def remove_pid(self):
         """Remove PID file and release lock"""
         try:
             if hasattr(self, 'pid_file_handle') and self.pid_file_handle:
-                fcntl.flock(self.pid_file_handle.fileno(), fcntl.LOCK_UN)
+                if IS_WINDOWS:
+                    try:
+                        msvcrt.locking(self.pid_file_handle.fileno(), msvcrt.LK_UNLCK, 1)
+                    except OSError:
+                        pass
+                else:
+                    fcntl.flock(self.pid_file_handle.fileno(), fcntl.LOCK_UN)
                 self.pid_file_handle.close()
             os.unlink(self.pid_file)
         except OSError:
@@ -427,13 +513,16 @@ class VoiceDaemon:
         """Start the daemon"""
         self.write_pid()
 
-        # Detect which tool to use
-        try:
-            subprocess.run(["which", "ydotool"], check=True, capture_output=True)
+        # Detect which typing tool to use
+        if IS_WINDOWS or IS_MACOS:
+            tool_name = "pynput (native)"
+        elif shutil.which("ydotool"):
             self.use_ydotool = True
             tool_name = "ydotool (Wayland/X11)"
-        except:
+        elif shutil.which("xdotool"):
             tool_name = "xdotool (X11)"
+        else:
+            tool_name = "pynput (fallback)"
 
         print("=" * 60)
         print(self.msg("started"))
@@ -477,7 +566,7 @@ class VoiceDaemon:
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Voice Input Daemon for Linux")
+    parser = argparse.ArgumentParser(description="Voice Input Daemon (cross-platform)")
     parser.add_argument(
         "-m", "--model",
         default="small",
