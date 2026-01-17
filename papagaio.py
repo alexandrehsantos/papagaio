@@ -96,7 +96,7 @@ class VoiceDaemon:
         self.cancel_recording_flag = False  # For ESC key
         self.recording_thread = None
         self.esc_listener = None
-        self.pid_file = "/tmp/voice-daemon.pid"
+        self.pid_file = "/tmp/papagaio.pid"
 
         # Audio settings for VAD
         self.CHUNK = CHUNK_SIZE
