@@ -48,3 +48,18 @@ models/
 # User-specific
 .env
 *.pid
+
+# Debian package build artifacts
+../*.deb
+../*.build
+../*.buildinfo
+../*.changes
+../*.dsc
+../*.tar.xz
+../*.tar.gz
+../*.upload
+
+# Next Steps / TODO
+# Register project on Launchpad: https://launchpad.net/projects/+new
+# Publish to PyPI: ./packaging/build-pypi.sh prod
+# Create PPA: See docs/LAUNCHPAD-SETUP.md

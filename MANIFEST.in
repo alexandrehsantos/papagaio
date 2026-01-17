@@ -8,8 +8,8 @@ include CONTRIBUTING.md
 include requirements.txt
 
 # Include scripts
-include voice-daemon.py
-include voice-ctl
+include papagaio.py
+include papagaio-ctl
 include install.sh
 include uninstall.sh
 
@@ -23,7 +23,6 @@ include MANIFEST.in
 
 # Exclude unnecessary files
 exclude .gitignore
-exclude voice-service-install.sh
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 recursive-exclude * *.swp

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Whisper Voice Daemon is a local voice-to-text service designed for Linux systems. It runs as a systemd user service and provides global hotkey-triggered speech recognition.
+Papagaio is a local voice-to-text service designed for Linux systems. It runs as a systemd user service and provides global hotkey-triggered speech recognition.
 
 ## System Components
 
@@ -43,16 +43,18 @@ class VoiceDaemon:
 - `enable` - Enable auto-start
 - `disable` - Disable auto-start
 
-### 3. Service Installer (`voice-service-install.sh`)
+### 3. Installer (`install.sh`)
 
-**Purpose:** One-command installation script
+**Purpose:** Professional multi-distro installation script
 
 **Actions:**
-1. Check Python version (>=3.8)
-2. Install Python dependencies
-3. Create systemd user service file
-4. Enable and start the service
-5. Provide usage instructions
+1. Detect Linux distribution
+2. Install system dependencies (xdotool, portaudio)
+3. Check Python version (>=3.8)
+4. Install Python dependencies
+5. Interactive configuration (model, language, hotkey)
+6. Create systemd user service
+7. Add papagaio-ctl to PATH
 
 ## Data Flow
 
