@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Papagaio
+Comment=Voice-to-text daemon control
+Exec=papagaio-tray
+Icon=audio-input-microphone
+Terminal=false
+Type=Application
+Categories=AudioVideo;Audio;Utility;
+Keywords=voice;speech;whisper;tray;
+X-GNOME-Autostart-enabled=true
+StartupNotify=false

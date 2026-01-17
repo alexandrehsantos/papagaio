@@ -195,7 +195,7 @@ install_python_deps() {
 
     # Install in user mode
     pip3 install --user --upgrade pip setuptools wheel 2>&1 | grep -v "Requirement already satisfied" || true
-    pip3 install --user faster-whisper pynput pyaudio 2>&1 | grep -v "Requirement already satisfied" || true
+    pip3 install --user faster-whisper pynput pyaudio plyer pystray Pillow 2>&1 | grep -v "Requirement already satisfied" || true
 
     print_success "Python dependencies installed"
     return 0
@@ -267,13 +267,23 @@ install_files() {
     cp "$SCRIPT_DIR/papagaio-settings.py" "$INSTALL_DIR/papagaio-settings.py"
     chmod +x "$INSTALL_DIR/papagaio-settings.py"
 
+    # Copy system tray app
+    cp "$SCRIPT_DIR/papagaio-tray.py" "$INSTALL_DIR/papagaio-tray.py"
+    chmod +x "$INSTALL_DIR/papagaio-tray.py"
+
     # Create symlinks in PATH
     ln -sf "$INSTALL_DIR/papagaio-ctl" "$BIN_DIR/papagaio-ctl"
     ln -sf "$INSTALL_DIR/papagaio-settings.py" "$BIN_DIR/papagaio-settings"
+    ln -sf "$INSTALL_DIR/papagaio-tray.py" "$BIN_DIR/papagaio-tray"
 
-    # Install desktop file for application menu
+    # Install desktop files for application menu
     mkdir -p "$HOME/.local/share/applications"
     cp "$SCRIPT_DIR/papagaio-settings.desktop" "$HOME/.local/share/applications/"
+    cp "$SCRIPT_DIR/papagaio-tray.desktop" "$HOME/.local/share/applications/"
+
+    # Install autostart entry for tray icon
+    mkdir -p "$HOME/.config/autostart"
+    cp "$SCRIPT_DIR/papagaio-tray.desktop" "$HOME/.config/autostart/"
 
     # Copy requirements
     if [ -f "$SCRIPT_DIR/requirements.txt" ]; then

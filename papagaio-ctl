@@ -170,6 +170,19 @@ case "$1" in
             exit 1
         fi
         ;;
+    tray)
+        TRAY_SCRIPT="$INSTALL_DIR/papagaio-tray.py"
+        if [ ! -f "$TRAY_SCRIPT" ]; then
+            TRAY_SCRIPT="$(dirname "$0")/papagaio-tray.py"
+        fi
+        if [ -f "$TRAY_SCRIPT" ]; then
+            /usr/bin/python3 "$TRAY_SCRIPT" &
+            print_success "System tray started"
+        else
+            print_error "Tray app not found"
+            exit 1
+        fi
+        ;;
     version)
         if [ -f "$DAEMON_SCRIPT" ]; then
             version=$(grep -m 1 "^# Version" "$DAEMON_SCRIPT" | cut -d' ' -f3 || echo "unknown")
@@ -196,6 +209,7 @@ case "$1" in
         echo -e "  ${CYAN}config${NC}     - Show current configuration"
         echo -e "  ${CYAN}edit${NC}       - Edit configuration file"
         echo -e "  ${CYAN}settings${NC}   - Open graphical settings"
+        echo -e "  ${CYAN}tray${NC}       - Start system tray icon"
         echo -e "  ${CYAN}version${NC}    - Show version information"
         echo -e "  ${CYAN}help${NC}       - Show this help message"
         echo ""
