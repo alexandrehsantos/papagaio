@@ -271,10 +271,16 @@ install_files() {
     cp "$SCRIPT_DIR/papagaio-tray.py" "$INSTALL_DIR/papagaio-tray.py"
     chmod +x "$INSTALL_DIR/papagaio-tray.py"
 
+    # Copy license module
+    cp "$SCRIPT_DIR/papagaio_license.py" "$INSTALL_DIR/papagaio_license.py"
+    cp "$SCRIPT_DIR/papagaio-activate.py" "$INSTALL_DIR/papagaio-activate.py"
+    chmod +x "$INSTALL_DIR/papagaio-activate.py"
+
     # Create symlinks in PATH
     ln -sf "$INSTALL_DIR/papagaio-ctl" "$BIN_DIR/papagaio-ctl"
     ln -sf "$INSTALL_DIR/papagaio-settings.py" "$BIN_DIR/papagaio-settings"
     ln -sf "$INSTALL_DIR/papagaio-tray.py" "$BIN_DIR/papagaio-tray"
+    ln -sf "$INSTALL_DIR/papagaio-activate.py" "$BIN_DIR/papagaio-activate"
 
     # Install desktop files for application menu
     mkdir -p "$HOME/.local/share/applications"

@@ -595,6 +595,21 @@ def load_config():
 def main():
     import argparse
 
+    # License check
+    try:
+        from papagaio_license import check_license, get_license_status
+        allowed, message = check_license()
+        if not allowed:
+            print(f"License: {message}")
+            print("Run 'papagaio-activate' to activate your license.")
+            sys.exit(1)
+        else:
+            status = get_license_status()
+            if status["status"] == "trial":
+                print(f"Trial: {status['remaining_days']} days remaining")
+    except ImportError:
+        pass  # License module not available, continue
+
     # Load config file defaults
     config = load_config()
 
