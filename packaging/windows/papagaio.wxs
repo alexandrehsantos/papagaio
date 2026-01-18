@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Papagaio Windows Installer (WiX Toolset)
+    Creates MSI package for Windows installation
+
+    Author: Alexandre Santos <alexandrehsantos@gmail.com>
+    Company: Bulvee Company
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+
+    <?define ProductName = "Papagaio" ?>
+    <?define ProductVersion = "1.1.0" ?>
+    <?define Manufacturer = "Bulvee Company" ?>
+    <?define UpgradeCode = "A1B2C3D4-E5F6-7890-ABCD-EF1234567890" ?>
+
+    <Product Id="*"
+             Name="$(var.ProductName)"
+             Language="1033"
+             Version="$(var.ProductVersion)"
+             Manufacturer="$(var.Manufacturer)"
+             UpgradeCode="$(var.UpgradeCode)">
+
+        <Package InstallerVersion="500"
+                 Compressed="yes"
+                 InstallScope="perUser"
+                 Description="Papagaio - Voice-to-Text Input"
+                 Comments="Voice input daemon using Whisper AI"
+                 Manufacturer="$(var.Manufacturer)" />
+
+        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed."
+                      AllowSameVersionUpgrades="yes" />
+
+        <MediaTemplate EmbedCab="yes" />
+
+        <Icon Id="PapagaioIcon" SourceFile="papagaio.ico" />
+        <Property Id="ARPPRODUCTICON" Value="PapagaioIcon" />
+        <Property Id="ARPHELPLINK" Value="https://github.com/alexandrehsantos/papagaio" />
+        <Property Id="ARPURLINFOABOUT" Value="https://github.com/alexandrehsantos/papagaio" />
+        <Property Id="ARPCONTACT" Value="support@bulvee.com" />
+
+        <Feature Id="MainFeature" Title="Papagaio" Level="1">
+            <ComponentGroupRef Id="ProductComponents" />
+            <ComponentRef Id="ApplicationShortcuts" />
+            <ComponentRef Id="StartupShortcut" />
+            <ComponentRef Id="ConfigDirectory" />
+        </Feature>
+
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <!-- Installation directory -->
+            <Directory Id="LocalAppDataFolder">
+                <Directory Id="INSTALLFOLDER" Name="Papagaio">
+                    <Directory Id="BinFolder" Name="bin" />
+                </Directory>
+            </Directory>
+
+            <!-- Config directory -->
+            <Directory Id="AppDataFolder">
+                <Directory Id="PapagaioConfigFolder" Name="Papagaio" />
+            </Directory>
+
+            <!-- Start Menu -->
+            <Directory Id="ProgramMenuFolder">
+                <Directory Id="ApplicationProgramsFolder" Name="Papagaio" />
+            </Directory>
+
+            <!-- Startup folder -->
+            <Directory Id="StartupFolder" />
+        </Directory>
+
+        <!-- Config directory component -->
+        <DirectoryRef Id="PapagaioConfigFolder">
+            <Component Id="ConfigDirectory" Guid="B2C3D4E5-F6A7-8901-BCDE-F23456789012">
+                <CreateFolder />
+                <RemoveFolder Id="RemoveConfigFolder" On="uninstall" />
+            </Component>
+        </DirectoryRef>
+
+        <!-- Start Menu shortcuts -->
+        <DirectoryRef Id="ApplicationProgramsFolder">
+            <Component Id="ApplicationShortcuts" Guid="C3D4E5F6-A7B8-9012-CDEF-345678901234">
+                <Shortcut Id="PapagaioSettingsShortcut"
+                          Name="Papagaio Settings"
+                          Description="Configure Papagaio voice input"
+                          Target="[BinFolder]papagaio-settings.exe"
+                          WorkingDirectory="BinFolder"
+                          Icon="PapagaioIcon" />
+
+                <Shortcut Id="PapagaioTrayShortcut"
+                          Name="Papagaio Tray"
+                          Description="Start Papagaio system tray"
+                          Target="[BinFolder]papagaio-tray.exe"
+                          WorkingDirectory="BinFolder"
+                          Icon="PapagaioIcon" />
+
+                <RemoveFolder Id="RemoveProgramsFolder" On="uninstall" />
+                <RegistryValue Root="HKCU"
+                               Key="Software\Papagaio"
+                               Name="installed"
+                               Type="integer"
+                               Value="1"
+                               KeyPath="yes" />
+            </Component>
+        </DirectoryRef>
+
+        <!-- Startup shortcut (auto-start tray on login) -->
+        <DirectoryRef Id="StartupFolder">
+            <Component Id="StartupShortcut" Guid="D4E5F6A7-B8C9-0123-DEF0-456789012345">
+                <Shortcut Id="PapagaioStartupShortcut"
+                          Name="Papagaio Tray"
+                          Description="Papagaio voice input system tray"
+                          Target="[BinFolder]papagaio-tray.exe"
+                          WorkingDirectory="BinFolder" />
+                <RegistryValue Root="HKCU"
+                               Key="Software\Papagaio"
+                               Name="startup"
+                               Type="integer"
+                               Value="1"
+                               KeyPath="yes" />
+            </Component>
+        </DirectoryRef>
+
+        <!-- Product files (populated by heat.exe during build) -->
+        <ComponentGroup Id="ProductComponents" Directory="BinFolder">
+            <!-- Files are harvested from PyInstaller output -->
+        </ComponentGroup>
+
+        <!-- Custom actions -->
+        <InstallExecuteSequence>
+            <Custom Action="LaunchTray" After="InstallFinalize">NOT Installed</Custom>
+        </InstallExecuteSequence>
+
+        <CustomAction Id="LaunchTray"
+                      FileKey="papagaio-tray.exe"
+                      ExeCommand=""
+                      Return="asyncNoWait" />
+
+        <!-- UI -->
+        <UIRef Id="WixUI_InstallDir" />
+        <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+        <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
+        <WixVariable Id="WixUIBannerBmp" Value="banner.bmp" />
+        <WixVariable Id="WixUIDialogBmp" Value="dialog.bmp" />
+
+    </Product>
+</Wix>

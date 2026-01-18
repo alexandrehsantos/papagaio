@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+    Papagaio launchd Service Configuration
+    Voice-to-text input daemon using Whisper AI
+
+    Author: Alexandre Santos <alexandrehsantos@gmail.com>
+    Company: Bulvee Company
+
+    Installation:
+      cp com.bulvee.papagaio.plist ~/Library/LaunchAgents/
+      launchctl load ~/Library/LaunchAgents/com.bulvee.papagaio.plist
+
+    Control:
+      launchctl start com.bulvee.papagaio
+      launchctl stop com.bulvee.papagaio
+      launchctl unload ~/Library/LaunchAgents/com.bulvee.papagaio.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.bulvee.papagaio</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/papagaio</string>
+        <string>-m</string>
+        <string>small</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+        <key>Crashed</key>
+        <true/>
+    </dict>
+
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+
+    <key>StandardOutPath</key>
+    <string>/usr/local/var/log/papagaio.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/usr/local/var/log/papagaio.error.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>LANG</key>
+        <string>en_US.UTF-8</string>
+    </dict>
+
+    <key>ProcessType</key>
+    <string>Interactive</string>
+
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
+
+    <key>AssociatedBundleIdentifiers</key>
+    <string>com.bulvee.papagaio</string>
+</dict>
+</plist>

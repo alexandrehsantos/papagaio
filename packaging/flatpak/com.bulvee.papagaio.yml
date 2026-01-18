@@ -1,0 +1,176 @@
+# Papagaio Flatpak Manifest
+# Voice-to-text input daemon using Whisper AI
+#
+# Author: Alexandre Santos <alexandrehsantos@gmail.com>
+# Company: Bulvee Company
+#
+# Build:
+#   flatpak-builder --user --install build-dir com.bulvee.papagaio.yml
+#   or use build-flatpak.sh script
+
+app-id: com.bulvee.papagaio
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+
+command: papagaio-tray
+
+finish-args:
+  # X11 access (for xdotool text input)
+  - --share=ipc
+  - --socket=x11
+  - --socket=fallback-x11
+
+  # Wayland access (for wtype text input)
+  - --socket=wayland
+
+  # Audio access (for microphone recording)
+  - --socket=pulseaudio
+
+  # Network access (for downloading Whisper models)
+  - --share=network
+
+  # D-Bus access (for notifications)
+  - --talk-name=org.freedesktop.Notifications
+
+  # System tray access
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=org.freedesktop.StatusNotifierWatcher
+
+  # Home directory access (for config and model cache)
+  - --filesystem=~/.config/papagaio:create
+  - --filesystem=~/.cache/whisper-models:create
+
+  # Access to xdotool
+  - --talk-name=org.freedesktop.portal.Desktop
+
+modules:
+  # PortAudio library for audio recording
+  - name: portaudio
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+    sources:
+      - type: archive
+        url: https://github.com/PortAudio/portaudio/archive/refs/tags/v19.7.0.tar.gz
+        sha256: 5af29ba58bbdbb7bbcefaaecc77ec8fc413f0db6f4c4e286c40c3e1b83174587
+
+  # xdotool for X11 text input
+  - name: xdotool
+    buildsystem: simple
+    build-commands:
+      - make
+      - make PREFIX=/app install
+    sources:
+      - type: archive
+        url: https://github.com/jordansissel/xdotool/releases/download/v3.20211022.1/xdotool-3.20211022.1.tar.gz
+        sha256: 96f0facfde6d78eacad35b91b0f46fecd0b35e474c03e00e30da3f0f2f7ef9d3
+    modules:
+      - name: libxkbcommon
+        buildsystem: meson
+        sources:
+          - type: archive
+            url: https://xkbcommon.org/download/libxkbcommon-1.6.0.tar.xz
+            sha256: 0edc14eccdd391514458bc5f5a4b99863ed2d651e4dd761a90abf4f46ef99c2b
+
+  # Python dependencies
+  - name: python3-pyaudio
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}"
+        --prefix=${FLATPAK_DEST} "." --no-build-isolation
+    sources:
+      - type: git
+        url: https://github.com/jleb/pyaudio.git
+        tag: v0.2.14
+
+  - name: python3-pynput
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --prefix=${FLATPAK_DEST} "." --no-build-isolation
+    sources:
+      - type: git
+        url: https://github.com/moses-palmer/pynput.git
+        tag: v1.7.6
+
+  - name: python3-faster-whisper
+    buildsystem: simple
+    build-commands:
+      - pip3 install --prefix=${FLATPAK_DEST} faster-whisper
+    sources: []
+
+  - name: python3-plyer
+    buildsystem: simple
+    build-commands:
+      - pip3 install --prefix=${FLATPAK_DEST} plyer
+    sources: []
+
+  - name: python3-pystray
+    buildsystem: simple
+    build-commands:
+      - pip3 install --prefix=${FLATPAK_DEST} pystray
+    sources: []
+
+  - name: python3-pillow
+    buildsystem: simple
+    build-commands:
+      - pip3 install --prefix=${FLATPAK_DEST} Pillow
+    sources: []
+
+  # Main application
+  - name: papagaio
+    buildsystem: simple
+    build-commands:
+      # Install main scripts
+      - install -Dm755 papagaio.py ${FLATPAK_DEST}/lib/papagaio/papagaio.py
+      - install -Dm755 papagaio-settings.py ${FLATPAK_DEST}/lib/papagaio/papagaio-settings.py
+      - install -Dm755 papagaio-tray.py ${FLATPAK_DEST}/lib/papagaio/papagaio-tray.py
+      - install -Dm755 papagaio-ctl ${FLATPAK_DEST}/lib/papagaio/papagaio-ctl
+
+      # Create wrapper scripts
+      - |
+        cat > ${FLATPAK_DEST}/bin/papagaio << 'EOF'
+        #!/bin/bash
+        exec python3 /app/lib/papagaio/papagaio.py "$@"
+        EOF
+        chmod +x ${FLATPAK_DEST}/bin/papagaio
+
+      - |
+        cat > ${FLATPAK_DEST}/bin/papagaio-tray << 'EOF'
+        #!/bin/bash
+        exec python3 /app/lib/papagaio/papagaio-tray.py "$@"
+        EOF
+        chmod +x ${FLATPAK_DEST}/bin/papagaio-tray
+
+      - |
+        cat > ${FLATPAK_DEST}/bin/papagaio-settings << 'EOF'
+        #!/bin/bash
+        exec python3 /app/lib/papagaio/papagaio-settings.py "$@"
+        EOF
+        chmod +x ${FLATPAK_DEST}/bin/papagaio-settings
+
+      - |
+        cat > ${FLATPAK_DEST}/bin/papagaio-ctl << 'EOF'
+        #!/bin/bash
+        exec /app/lib/papagaio/papagaio-ctl "$@"
+        EOF
+        chmod +x ${FLATPAK_DEST}/bin/papagaio-ctl
+
+      # Install desktop file
+      - install -Dm644 papagaio-tray.desktop ${FLATPAK_DEST}/share/applications/com.bulvee.papagaio.desktop
+      - desktop-file-edit --set-key=Exec --set-value='papagaio-tray' ${FLATPAK_DEST}/share/applications/com.bulvee.papagaio.desktop
+      - desktop-file-edit --set-key=Icon --set-value='com.bulvee.papagaio' ${FLATPAK_DEST}/share/applications/com.bulvee.papagaio.desktop
+
+      # Install icon
+      - install -Dm644 papagaio.svg ${FLATPAK_DEST}/share/icons/hicolor/scalable/apps/com.bulvee.papagaio.svg
+
+      # Install appdata
+      - install -Dm644 com.bulvee.papagaio.metainfo.xml ${FLATPAK_DEST}/share/metainfo/com.bulvee.papagaio.metainfo.xml
+
+    sources:
+      - type: dir
+        path: ../..
+      - type: file
+        path: papagaio.svg
+      - type: file
+        path: com.bulvee.papagaio.metainfo.xml

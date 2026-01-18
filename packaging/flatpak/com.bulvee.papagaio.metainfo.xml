@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Papagaio AppStream Metadata
+    Author: Alexandre Santos <alexandrehsantos@gmail.com>
+    Company: Bulvee Company
+-->
+<component type="desktop-application">
+  <id>com.bulvee.papagaio</id>
+
+  <name>Papagaio</name>
+  <summary>Voice-to-text input using Whisper AI</summary>
+
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+
+  <developer id="com.bulvee">
+    <name>Bulvee Company</name>
+  </developer>
+
+  <description>
+    <p>
+      Papagaio is a voice-to-text input daemon that uses OpenAI's Whisper AI
+      for accurate speech recognition. Press a configurable hotkey, speak,
+      and the transcribed text is automatically typed into any application.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>High-quality speech recognition with Whisper AI (faster-whisper)</li>
+      <li>Works with any application via keyboard simulation</li>
+      <li>Configurable hotkey activation (default: Ctrl+Shift+Alt+V)</li>
+      <li>Multiple Whisper model sizes (tiny, base, small, medium)</li>
+      <li>System tray integration for easy control</li>
+      <li>Graphical settings interface</li>
+      <li>Automatic silence detection to stop recording</li>
+      <li>Support for multiple languages</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">com.bulvee.papagaio.desktop</launchable>
+
+  <url type="homepage">https://github.com/alexandrehsantos/papagaio</url>
+  <url type="bugtracker">https://github.com/alexandrehsantos/papagaio/issues</url>
+  <url type="help">https://github.com/alexandrehsantos/papagaio#readme</url>
+  <url type="contact">mailto:support@bulvee.com</url>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>System tray menu showing daemon controls</caption>
+      <image>https://raw.githubusercontent.com/alexandrehsantos/papagaio/main/screenshots/tray-menu.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Settings dialog for configuring Papagaio</caption>
+      <image>https://raw.githubusercontent.com/alexandrehsantos/papagaio/main/screenshots/settings.png</image>
+    </screenshot>
+  </screenshots>
+
+  <provides>
+    <binary>papagaio</binary>
+    <binary>papagaio-tray</binary>
+    <binary>papagaio-settings</binary>
+    <binary>papagaio-ctl</binary>
+  </provides>
+
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
+
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </supports>
+
+  <releases>
+    <release version="1.1.0" date="2024-01-01">
+      <description>
+        <p>New features and improvements:</p>
+        <ul>
+          <li>Added system tray GUI for visual control</li>
+          <li>Added graphical settings interface</li>
+          <li>Cross-platform support (Linux, Windows, macOS)</li>
+          <li>Changed default hotkey to Ctrl+Shift+Alt+V</li>
+          <li>Improved configuration handling</li>
+        </ul>
+      </description>
+    </release>
+    <release version="1.0.0" date="2024-01-01">
+      <description>
+        <p>Initial release featuring:</p>
+        <ul>
+          <li>Voice-to-text using Whisper AI</li>
+          <li>Configurable hotkey activation</li>
+          <li>Automatic silence detection</li>
+          <li>Systemd integration</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-audio">intense</content_attribute>
+  </content_rating>
+
+  <categories>
+    <category>AudioVideo</category>
+    <category>Audio</category>
+    <category>Utility</category>
+    <category>Accessibility</category>
+  </categories>
+
+  <keywords>
+    <keyword>voice</keyword>
+    <keyword>speech</keyword>
+    <keyword>whisper</keyword>
+    <keyword>dictation</keyword>
+    <keyword>transcription</keyword>
+    <keyword>accessibility</keyword>
+    <keyword>input</keyword>
+    <keyword>AI</keyword>
+  </keywords>
+</component>
