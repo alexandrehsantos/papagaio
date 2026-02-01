@@ -48,7 +48,7 @@ AUDIO_FORMAT = pyaudio.paInt16
 CHANNELS = 1
 SAMPLE_RATE = 16000
 SILENCE_THRESHOLD_RMS = 400
-SILENCE_DURATION_SECONDS = 5.0
+SILENCE_DURATION_SECONDS = 3600.0  # 60 minutes default
 MAX_RECORDING_DURATION_SECONDS = 3600
 MIN_VALID_TRANSCRIPTION_LENGTH = 3
 TYPING_DELAY_SECONDS = 0.3
@@ -104,7 +104,7 @@ MESSAGES = {
 
 
 class VoiceDaemon:
-    def __init__(self, model_size="small", hotkey="<ctrl>+<shift>+<alt>+v", use_ydotool=False, model_cache_dir=None, lang="en"):
+    def __init__(self, model_size="small", hotkey="<ctrl>+<shift>+<alt>+v", use_ydotool=False, model_cache_dir=None, lang="en", silence_threshold=None, silence_duration=None):
         self.model_size = model_size
         self.hotkey = hotkey
         self.use_ydotool = use_ydotool
@@ -123,8 +123,8 @@ class VoiceDaemon:
         self.FORMAT = AUDIO_FORMAT
         self.CHANNELS = CHANNELS
         self.RATE = SAMPLE_RATE
-        self.SILENCE_THRESHOLD = SILENCE_THRESHOLD_RMS
-        self.SILENCE_DURATION = SILENCE_DURATION_SECONDS
+        self.SILENCE_THRESHOLD = silence_threshold if silence_threshold is not None else SILENCE_THRESHOLD_RMS
+        self.SILENCE_DURATION = silence_duration if silence_duration is not None else SILENCE_DURATION_SECONDS
         self.MAX_RECORDING_TIME = MAX_RECORDING_DURATION_SECONDS
 
     def msg(self, key):
@@ -573,7 +573,9 @@ def load_config():
         'language': 'en',
         'hotkey': '<ctrl>+<shift>+<alt>+v',
         'use_ydotool': False,
-        'cache_dir': os.path.expanduser("~/.cache/whisper-models")
+        'cache_dir': os.path.expanduser("~/.cache/whisper-models"),
+        'silence_threshold': 400,
+        'silence_duration': 3600.0  # 60 minutes default
     }
 
     if os.path.exists(config_file):
@@ -585,6 +587,10 @@ def load_config():
             defaults['language'] = config['General'].get('language', defaults['language'])
             defaults['hotkey'] = config['General'].get('hotkey', defaults['hotkey'])
             defaults['cache_dir'] = config['General'].get('cache_dir', defaults['cache_dir'])
+
+        if 'Audio' in config:
+            defaults['silence_threshold'] = int(config['Audio'].get('silence_threshold', '400'))
+            defaults['silence_duration'] = float(config['Audio'].get('silence_duration', '3600.0'))
 
         if 'Advanced' in config:
             defaults['use_ydotool'] = config['Advanced'].get('use_ydotool', 'false').lower() == 'true'
@@ -645,7 +651,9 @@ def main():
         hotkey=args.hotkey,
         use_ydotool=args.ydotool,
         model_cache_dir=config['cache_dir'],
-        lang=args.lang
+        lang=args.lang,
+        silence_threshold=config['silence_threshold'],
+        silence_duration=config['silence_duration']
     )
 
     # Handle signals
