@@ -65,7 +65,7 @@ class PapagaioSettings:
             },
             'Audio': {
                 'silence_threshold': '400',
-                'silence_duration': '5.0',
+                'silence_duration': '3600.0',
                 'max_recording_time': '3600'
             },
             'Advanced': {
@@ -123,9 +123,9 @@ class PapagaioSettings:
         # Silence Duration
         ttk.Label(audio_frame, text="Silence Duration (seconds):", font=('', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=(20, 5))
         self.duration_var = tk.StringVar(value=self.config['Audio']['silence_duration'])
-        duration_spin = ttk.Spinbox(audio_frame, from_=1.0, to=30.0, increment=0.5, textvariable=self.duration_var, width=10)
+        duration_spin = ttk.Spinbox(audio_frame, from_=5.0, to=3600.0, increment=60, textvariable=self.duration_var, width=10)
         duration_spin.grid(row=4, column=0, sticky='w', padx=(20, 0))
-        ttk.Label(audio_frame, text="Wait time before auto-stop (default: 5.0)", foreground='gray').grid(row=5, column=0, sticky='w', padx=(20, 0))
+        ttk.Label(audio_frame, text="Wait time before auto-stop (default: 3600 = 60 min)", foreground='gray').grid(row=5, column=0, sticky='w', padx=(20, 0))
 
         # Max Recording Time
         ttk.Label(audio_frame, text="Max Recording Time (seconds):", font=('', 10, 'bold')).grid(row=6, column=0, sticky='w', pady=(20, 5))
