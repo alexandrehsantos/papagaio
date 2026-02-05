@@ -16,7 +16,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="papagaio",
-    version="1.1.0",
+    version="1.2.0",
     author="Alexandre Santos",
     author_email="alexandrehsantos@example.com",
     description="Voice-to-text daemon for Linux - Papagaio repeats what you say",
@@ -59,9 +59,7 @@ setup(
     },
     scripts=[
         "papagaio.py",
-        "papagaioctl",
-        "install.sh",
-        "uninstall.sh",
+        "papagaio-ctl",
     ],
     data_files=[
         ("share/doc/papagaio", ["README.md", "CHANGELOG.md", "LICENSE", "CONTRIBUTING.md"]),

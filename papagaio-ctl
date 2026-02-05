@@ -1,7 +1,6 @@
 #!/bin/bash
 #
-# Papagaio Control Script
-# Part of Whisper Papagaio project
+# papagaio-ctl - Control script for the Papagaio voice daemon
 #
 
 # Colors
@@ -14,36 +13,45 @@ NC='\033[0m'
 BOLD='\033[1m'
 
 SERVICE_NAME="papagaio"
-INSTALL_DIR="$HOME/.local/bin/papagaio"
-DAEMON_SCRIPT="$INSTALL_DIR/papagaio.py"
 CONFIG_FILE="$HOME/.config/papagaio/config.ini"
 
-# Fallback to current directory if not installed
-if [ ! -f "$DAEMON_SCRIPT" ]; then
-    DAEMON_SCRIPT="$(dirname "$0")/papagaio.py"
-fi
-
-print_success() {
-    echo -e "${GREEN}✓${NC} $1"
+# Resolve the papagaio binary dynamically:
+#   1. /usr/bin/papagaio        (deb install)
+#   2. next to this script      (AppImage or dev)
+#   3. anywhere in PATH
+resolve_daemon() {
+    if [ -x "/usr/bin/papagaio" ]; then
+        echo "/usr/bin/papagaio"
+    elif [ -x "$(dirname "$(readlink -f "$0")")/papagaio" ]; then
+        echo "$(dirname "$(readlink -f "$0")")/papagaio"
+    elif command -v papagaio &>/dev/null; then
+        command -v papagaio
+    else
+        echo ""
+    fi
 }
 
-print_error() {
-    echo -e "${RED}✗${NC} $1"
-}
+DAEMON_BIN="$(resolve_daemon)"
 
-print_info() {
-    echo -e "${BLUE}ℹ${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}⚠${NC} $1"
-}
+print_success() { echo -e "${GREEN}✓${NC} $1"; }
+print_error()   { echo -e "${RED}✗${NC} $1"; }
+print_info()    { echo -e "${BLUE}ℹ${NC} $1"; }
+print_warning() { echo -e "${YELLOW}⚠${NC} $1"; }
 
 get_hotkey() {
     if [ -f "$CONFIG_FILE" ]; then
         grep "^hotkey" "$CONFIG_FILE" | cut -d'=' -f2 | tr -d ' '
     else
-        echo "Ctrl+Shift+Alt+V"
+        echo "Ctrl+Alt+V"
+    fi
+}
+
+require_daemon() {
+    if [ -z "$DAEMON_BIN" ]; then
+        print_error "Papagaio binary not found"
+        print_info "Searched: /usr/bin/papagaio, script directory, PATH"
+        print_info "Install with: sudo dpkg -i papagaio_*.deb"
+        exit 1
     fi
 }
 
@@ -121,19 +129,16 @@ case "$1" in
         echo -e "${CYAN}────────────────────────────────────────${NC}"
         echo ""
 
-        if [ ! -f "$DAEMON_SCRIPT" ]; then
-            print_error "Daemon script not found: $DAEMON_SCRIPT"
-            print_info "Please run the installer: ./install.sh"
-            exit 1
-        fi
+        require_daemon
 
         hotkey=$(get_hotkey)
+        print_info "Binary: ${CYAN}$DAEMON_BIN${NC}"
         print_info "Press ${CYAN}$hotkey${NC} to test voice input"
         print_info "Stop recording: Wait 5s, press $hotkey again, or ESC"
         print_info "Exit test: ${CYAN}Ctrl+C${NC}"
         echo ""
 
-        /usr/bin/python3 "$DAEMON_SCRIPT" -m small
+        "$DAEMON_BIN" -m small
         ;;
     config)
         if [ -f "$CONFIG_FILE" ]; then
@@ -157,94 +162,48 @@ case "$1" in
             exit 1
         fi
         ;;
-    settings)
-        SETTINGS_SCRIPT="$INSTALL_DIR/papagaio-settings.py"
-        if [ ! -f "$SETTINGS_SCRIPT" ]; then
-            SETTINGS_SCRIPT="$(dirname "$0")/papagaio-settings.py"
-        fi
-        if [ -f "$SETTINGS_SCRIPT" ]; then
-            /usr/bin/python3 "$SETTINGS_SCRIPT" &
-            print_success "Settings window opened"
-        else
-            print_error "Settings GUI not found"
-            exit 1
-        fi
-        ;;
-    tray)
-        TRAY_SCRIPT="$INSTALL_DIR/papagaio-tray.py"
-        if [ ! -f "$TRAY_SCRIPT" ]; then
-            TRAY_SCRIPT="$(dirname "$0")/papagaio-tray.py"
-        fi
-        if [ -f "$TRAY_SCRIPT" ]; then
-            /usr/bin/python3 "$TRAY_SCRIPT" &
-            print_success "System tray started"
-        else
-            print_error "Tray app not found"
-            exit 1
-        fi
-        ;;
-    version)
-        if [ -f "$DAEMON_SCRIPT" ]; then
-            version=$(grep -m 1 "^# Version" "$DAEMON_SCRIPT" | cut -d' ' -f3 || echo "unknown")
-            echo "Whisper Papagaio v${version:-1.0.1}"
-        else
-            echo "Whisper Papagaio (not installed)"
-        fi
+    version|-V|--version)
+        require_daemon
+        "$DAEMON_BIN" --version
         ;;
     help|--help|-h)
         echo -e "${BOLD}${BLUE}Papagaio Control${NC}"
         echo ""
         echo -e "${BOLD}USAGE:${NC}"
-        echo "  papagaio-ctl [command]"
+        echo "  papagaio-ctl <command>"
         echo ""
         echo -e "${BOLD}COMMANDS:${NC}"
-        echo -e "  ${CYAN}start${NC}      - Start the voice daemon"
-        echo -e "  ${CYAN}stop${NC}       - Stop the voice daemon"
-        echo -e "  ${CYAN}restart${NC}    - Restart the voice daemon"
-        echo -e "  ${CYAN}status${NC}     - Show daemon status and configuration"
-        echo -e "  ${CYAN}logs${NC}       - Show daemon logs (live, Ctrl+C to exit)"
-        echo -e "  ${CYAN}enable${NC}     - Enable auto-start on login"
-        echo -e "  ${CYAN}disable${NC}    - Disable auto-start"
-        echo -e "  ${CYAN}test${NC}       - Run daemon in foreground (debug mode)"
-        echo -e "  ${CYAN}config${NC}     - Show current configuration"
-        echo -e "  ${CYAN}edit${NC}       - Edit configuration file"
-        echo -e "  ${CYAN}settings${NC}   - Open graphical settings"
-        echo -e "  ${CYAN}tray${NC}       - Start system tray icon"
-        echo -e "  ${CYAN}version${NC}    - Show version information"
-        echo -e "  ${CYAN}help${NC}       - Show this help message"
+        echo -e "  ${CYAN}start${NC}      Start the voice daemon"
+        echo -e "  ${CYAN}stop${NC}       Stop the voice daemon"
+        echo -e "  ${CYAN}restart${NC}    Restart the voice daemon"
+        echo -e "  ${CYAN}status${NC}     Show daemon status"
+        echo -e "  ${CYAN}logs${NC}       Follow daemon logs (Ctrl+C to exit)"
+        echo -e "  ${CYAN}enable${NC}     Enable auto-start on login"
+        echo -e "  ${CYAN}disable${NC}    Disable auto-start"
+        echo -e "  ${CYAN}test${NC}       Run daemon in foreground (debug)"
+        echo -e "  ${CYAN}config${NC}     Show current configuration"
+        echo -e "  ${CYAN}edit${NC}       Edit configuration file"
+        echo -e "  ${CYAN}version${NC}    Show version"
+        echo -e "  ${CYAN}help${NC}       Show this help"
         echo ""
-        echo -e "${BOLD}EXAMPLES:${NC}"
-        echo "  papagaio-ctl start           # Start daemon"
-        echo "  papagaio-ctl logs            # Watch logs"
-        echo "  papagaio-ctl test            # Test in foreground"
-        echo ""
-        echo -e "${BOLD}USAGE INSTRUCTIONS:${NC}"
-        echo "  1. Start daemon: ${CYAN}papagaio-ctl start${NC}"
+        echo -e "${BOLD}QUICK START:${NC}"
+        echo "  papagaio-ctl start"
         hotkey=$(get_hotkey)
-        echo "  2. Press hotkey: ${YELLOW}$hotkey${NC}"
-        echo "  3. Speak clearly"
-        echo "  4. Stop recording:"
-        echo "     • Wait 5 seconds (auto-stop)"
-        echo "     • Press $hotkey again (manual)"
-        echo "     • Press ESC (cancel)"
+        echo -e "  Press ${YELLOW}$hotkey${NC} and speak"
+        echo "  Recording stops after 5s of silence, or press hotkey again"
         echo ""
-        echo -e "${BOLD}CONFIGURATION:${NC}"
-        echo "  Config file: $CONFIG_FILE"
-        echo "  Edit with:   ${CYAN}papagaio-ctl edit${NC}"
-        echo ""
-        echo -e "${BOLD}DOCUMENTATION:${NC}"
-        echo "  GitHub: https://github.com/alexandrehsantos/whisper-papagaio"
+        echo -e "${BOLD}CONFIG:${NC}  $CONFIG_FILE"
+        echo -e "${BOLD}DOCS:${NC}    man papagaio | man papagaio-ctl"
+        echo -e "${BOLD}SOURCE:${NC}  https://github.com/alexandrehsantos/papagaio"
         echo ""
         ;;
     *)
         print_error "Unknown command: $1"
         echo ""
-        echo "Usage: papagaio-ctl [command]"
+        echo "Usage: papagaio-ctl <command>"
+        echo "Commands: start, stop, restart, status, logs, test, help"
         echo ""
-        echo "Common commands:"
-        echo "  start, stop, restart, status, logs"
-        echo ""
-        echo "For full help: ${CYAN}papagaio-ctl help${NC}"
+        echo "Run ${CYAN}papagaio-ctl help${NC} for full usage."
         exit 1
         ;;
 esac
