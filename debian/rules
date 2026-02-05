@@ -1,19 +1,40 @@
 #!/usr/bin/make -f
 
 %:
-	dh $@ --with python3 --buildsystem=pybuild
+	dh $@
+
+override_dh_auto_clean:
+	# Don't run make clean (it would delete dist/papagaio)
+	rm -rf debian/papagaio debian/.debhelper
+	rm -f debian/debhelper-build-stamp debian/papagaio.substvars debian/files
+
+override_dh_auto_build:
+	# Binary is pre-built by build-deb.sh via PyInstaller
+	test -f dist/papagaio || { echo "ERROR: run ./build-deb.sh first"; exit 1; }
 
 override_dh_auto_install:
-	dh_auto_install
-	# Install scripts
-	install -D -m 755 papagaio.py debian/papagaio/usr/bin/papagaio
+	# PyInstaller binary
+	install -D -m 755 dist/papagaio debian/papagaio/usr/bin/papagaio
+
+	# Control script
 	install -D -m 755 papagaio-ctl debian/papagaio/usr/bin/papagaio-ctl
-	install -D -m 755 install.sh debian/papagaio/usr/share/papagaio/install.sh
-	install -D -m 755 uninstall.sh debian/papagaio/usr/share/papagaio/uninstall.sh
-	# Install documentation
+
+	# Man pages
+	install -D -m 644 docs/papagaio.1 debian/papagaio/usr/share/man/man1/papagaio.1
+	install -D -m 644 docs/papagaio-ctl.1 debian/papagaio/usr/share/man/man1/papagaio-ctl.1
+
+	# Documentation
 	install -D -m 644 README.md debian/papagaio/usr/share/doc/papagaio/README.md
-	install -D -m 644 CHANGELOG.md debian/papagaio/usr/share/doc/papagaio/CHANGELOG.md
-	install -D -m 644 LICENSE debian/papagaio/usr/share/doc/papagaio/LICENSE
+
+override_dh_auto_test:
+	# Skip tests during packaging
 
 override_dh_installsystemd:
-	# SystemD service is user-level, handled by install.sh
+	# Systemd user service is created by postinst
+
+override_dh_shlibdeps:
+	# PyInstaller binary bundles its own libs; skip analysis
+	dh_shlibdeps -- --ignore-missing-info 2>/dev/null || true
+
+override_dh_strip:
+	# Already stripped by PyInstaller

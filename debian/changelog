@@ -1,3 +1,42 @@
+papagaio (1.3.0-1) focal; urgency=medium
+
+  * Performance: NumPy-optimized RMS calculation (5-10x faster)
+  * Performance: Auto-detect GPU (CUDA) for 5-15x faster transcription
+  * Performance: Adaptive CPU worker count optimization
+  * Feature: Auto-calibration of microphone noise floor
+  * Feature: Edit dialog before sending text (-e flag)
+  * Feature: Visual audio level feedback during recording
+  * Improved: Smaller chunks (1024) for faster speech detection
+  * Improved: Silence duration default 2s (was 3600s bug)
+  * Improved: Lower typing delay (0.1s)
+  * Settings GUI: Added edit_before_send option
+
+ -- Alexandre Santos <alexandrehsantos@example.com>  Wed, 05 Feb 2026 22:00:00 -0300
+
+papagaio (1.2.0-2) focal; urgency=medium
+
+  * Switch to PyInstaller-compiled binary (no Python required on target)
+  * Remove python3/pip dependencies from package
+  * Add man pages for papagaio(1) and papagaio-ctl(1)
+  * Add postrm script for clean uninstall
+  * Fix papagaio-ctl path resolution for /usr/bin install
+  * Add --version flag to papagaio binary
+  * Architecture changed to amd64 (binary package)
+
+ -- Alexandre Santos <alexandrehsantos@example.com>  Sat, 01 Feb 2026 15:00:00 -0300
+
+papagaio (1.2.0-1) focal; urgency=medium
+
+  * Stable release based on production-tested version
+  * Fix: silence duration back to 5s (was broken at 3600s)
+  * Fix: cache path uses ~/.cache/whisper-models
+  * Fix: hotkey default Ctrl+Alt+V
+  * Fix: transcription language passed to Whisper
+  * Removed: tray, settings GUI, licensing (not stable)
+  * Simplified packaging to core daemon only
+
+ -- Alexandre Santos <alexandrehsantos@example.com>  Sat, 01 Feb 2026 12:00:00 -0300
+
 papagaio (1.1.0-1ubuntu1) focal; urgency=medium
 
   * New upstream release
