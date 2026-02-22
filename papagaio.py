@@ -27,7 +27,7 @@ else:
 try:
     from faster_whisper import WhisperModel
     from pynput import keyboard
-    from pynput.keyboard import Controller as KeyboardController, Key
+    from pynput.keyboard import Controller as KeyboardController, Key, KeyCode
     import pyaudio
     import numpy as np
 except ImportError as e:
@@ -249,6 +249,56 @@ class VoiceDaemon:
                 except OSError:
                     pass
         return True
+
+    _PYNPUT_MODIFIER_MAP = {
+        '<ctrl>': {Key.ctrl_l, Key.ctrl_r, Key.ctrl},
+        '<shift>': {Key.shift, Key.shift_l, Key.shift_r},
+        '<alt>': {Key.alt_l, Key.alt_r, Key.alt,
+                  KeyCode.from_vk(65511), KeyCode.from_vk(65513), KeyCode.from_vk(65514)},
+        '<super>': {Key.cmd, Key.cmd_l, Key.cmd_r},
+        '<cmd>': {Key.cmd, Key.cmd_l, Key.cmd_r},
+    }
+
+    def _parse_hotkey_pynput(self, hotkey_str):
+        modifier_sets = []
+        trigger_char = None
+        for part in hotkey_str.lower().split('+'):
+            part = part.strip()
+            if part in self._PYNPUT_MODIFIER_MAP:
+                modifier_sets.append(self._PYNPUT_MODIFIER_MAP[part])
+            elif len(part) == 1:
+                trigger_char = part
+            elif part.startswith('<') and part.endswith('>'):
+                trigger_char = part.strip('<>')
+        return modifier_sets, trigger_char
+
+    def _pynput_listener_loop(self):
+        modifier_sets, trigger_char = self._parse_hotkey_pynput(self.hotkey)
+        pressed = set()
+
+        def on_press(key):
+            pressed.add(key)
+            char = None
+            if hasattr(key, 'char') and key.char:
+                char = key.char.lower()
+            elif hasattr(key, 'vk') and key.vk and 65 <= key.vk <= 90:
+                char = chr(key.vk + 32)
+
+            if char == trigger_char:
+                all_held = all(bool(pressed & mset) for mset in modifier_sets)
+                now = time.monotonic()
+                if all_held and now - self._hotkey_cooldown > 1.0:
+                    self._hotkey_cooldown = now
+                    self.on_activate()
+
+            if key == Key.esc and self.is_recording:
+                self.cancel_recording_flag = True
+
+        def on_release(key):
+            pressed.discard(key)
+
+        with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
+            listener.join()
 
     def msg(self, key):
         """Get translated message"""
@@ -824,8 +874,7 @@ class VoiceDaemon:
                     use_pynput = False
             if use_pynput:
                 print("[Papagaio] Using pynput for hotkey detection", flush=True)
-                with keyboard.GlobalHotKeys({self.hotkey: self.on_activate}) as listener:
-                    listener.join()
+                self._pynput_listener_loop()
         except KeyboardInterrupt:
             print("\n[Papagaio] Stopping...")
         finally:
