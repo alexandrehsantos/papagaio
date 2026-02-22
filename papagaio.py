@@ -29,11 +29,19 @@ try:
     from pynput import keyboard
     from pynput.keyboard import Controller as KeyboardController, Key
     import pyaudio
-    import numpy as np  # For optimized audio processing
+    import numpy as np
 except ImportError as e:
     print(f"Missing required dependency: {e.name}")
     print("Please install dependencies: pip install faster-whisper pynput pyaudio numpy")
     sys.exit(1)
+
+HAS_EVDEV = False
+try:
+    import evdev
+    import select as _select_mod
+    HAS_EVDEV = True
+except ImportError:
+    pass
 
 # Optional: GPU acceleration
 HAS_CUDA = False
@@ -140,6 +148,8 @@ class VoiceDaemon:
         self.recording_thread = None
         self.esc_listener = None
         self.pid_file = os.path.join(tempfile.gettempdir(), "papagaio.pid")
+        self._hotkey_cooldown = 0
+        self._stop_listener = False
 
         # Audio settings for VAD
         self.CHUNK = CHUNK_SIZE
@@ -149,6 +159,96 @@ class VoiceDaemon:
         self.SILENCE_THRESHOLD = silence_threshold if silence_threshold is not None else SILENCE_THRESHOLD_RMS
         self.SILENCE_DURATION = silence_duration if silence_duration is not None else SILENCE_DURATION_SECONDS
         self.MAX_RECORDING_TIME = MAX_RECORDING_DURATION_SECONDS
+
+    _EVDEV_KEY_MAP = {
+        '<ctrl>': {evdev.ecodes.KEY_LEFTCTRL, evdev.ecodes.KEY_RIGHTCTRL} if HAS_EVDEV else set(),
+        '<shift>': {evdev.ecodes.KEY_LEFTSHIFT, evdev.ecodes.KEY_RIGHTSHIFT} if HAS_EVDEV else set(),
+        '<alt>': {evdev.ecodes.KEY_LEFTALT, evdev.ecodes.KEY_RIGHTALT} if HAS_EVDEV else set(),
+        '<super>': {evdev.ecodes.KEY_LEFTMETA, evdev.ecodes.KEY_RIGHTMETA} if HAS_EVDEV else set(),
+        '<cmd>': {evdev.ecodes.KEY_LEFTMETA, evdev.ecodes.KEY_RIGHTMETA} if HAS_EVDEV else set(),
+        '<esc>': {evdev.ecodes.KEY_ESC} if HAS_EVDEV else set(),
+    }
+
+    _EVDEV_CHAR_MAP = {
+        'a': 'KEY_A', 'b': 'KEY_B', 'c': 'KEY_C', 'd': 'KEY_D', 'e': 'KEY_E',
+        'f': 'KEY_F', 'g': 'KEY_G', 'h': 'KEY_H', 'i': 'KEY_I', 'j': 'KEY_J',
+        'k': 'KEY_K', 'l': 'KEY_L', 'm': 'KEY_M', 'n': 'KEY_N', 'o': 'KEY_O',
+        'p': 'KEY_P', 'q': 'KEY_Q', 'r': 'KEY_R', 's': 'KEY_S', 't': 'KEY_T',
+        'u': 'KEY_U', 'v': 'KEY_V', 'w': 'KEY_W', 'x': 'KEY_X', 'y': 'KEY_Y',
+        'z': 'KEY_Z',
+    }
+
+    def _parse_hotkey_evdev(self, hotkey_str):
+        modifier_groups = []
+        trigger_key = None
+        for part in hotkey_str.lower().split('+'):
+            part = part.strip()
+            if part in self._EVDEV_KEY_MAP:
+                modifier_groups.append(self._EVDEV_KEY_MAP[part])
+            elif part.strip('<>') in self._EVDEV_CHAR_MAP:
+                char = part.strip('<>')
+                trigger_key = getattr(evdev.ecodes, self._EVDEV_CHAR_MAP[char])
+            elif len(part) == 1 and part in self._EVDEV_CHAR_MAP:
+                trigger_key = getattr(evdev.ecodes, self._EVDEV_CHAR_MAP[part])
+        return modifier_groups, trigger_key
+
+    def _get_evdev_keyboards(self):
+        devices = []
+        for path in evdev.list_devices():
+            try:
+                dev = evdev.InputDevice(path)
+                caps = dev.capabilities()
+                if evdev.ecodes.EV_KEY in caps:
+                    key_caps = caps[evdev.ecodes.EV_KEY]
+                    if evdev.ecodes.KEY_A in key_caps or evdev.ecodes.KEY_ENTER in key_caps:
+                        devices.append(dev)
+            except PermissionError:
+                continue
+        return devices
+
+    def _evdev_listener_loop(self):
+        keyboards = self._get_evdev_keyboards()
+        if not keyboards:
+            return False
+
+        kb_names = [k.name for k in keyboards]
+        print(f"[Papagaio] evdev keyboards: {kb_names}", flush=True)
+
+        modifier_groups, trigger_key = self._parse_hotkey_evdev(self.hotkey)
+        print(f"[Papagaio] evdev hotkey: modifiers={modifier_groups} trigger={trigger_key}", flush=True)
+        pressed = set()
+        heartbeat = 0
+        while not self._stop_listener:
+            heartbeat += 1
+            if heartbeat <= 3:
+                print(f"[Papagaio] evdev loop tick {heartbeat}", flush=True)
+            r, _, _ = _select_mod.select(keyboards, [], [], 0.5)
+            for dev in r:
+                try:
+                    for event in dev.read():
+                        if event.type != evdev.ecodes.EV_KEY:
+                            continue
+                        if event.value == 1:  # key down
+                            pressed.add(event.code)
+                            if event.code in (29, 97, 42, 54, 56, 100, trigger_key):
+                                key_name = evdev.ecodes.KEY.get(event.code, event.code)
+                                print(f"[Papagaio] MOD key={key_name} pressed={pressed}", flush=True)
+                            if event.code == trigger_key:
+                                modifiers_held = all(
+                                    any(k in pressed for k in group)
+                                    for group in modifier_groups
+                                )
+                                now = time.monotonic()
+                                if modifiers_held and now - self._hotkey_cooldown > 1.0:
+                                    self._hotkey_cooldown = now
+                                    self.on_activate()
+                            if event.code == evdev.ecodes.KEY_ESC and self.is_recording:
+                                self.cancel_recording_flag = True
+                        elif event.value == 0:  # key up
+                            pressed.discard(event.code)
+                except OSError:
+                    pass
+        return True
 
     def msg(self, key):
         """Get translated message"""
@@ -539,12 +639,13 @@ class VoiceDaemon:
             pass
 
     def start_esc_listener(self):
-        """Start ESC key listener for cancelling recording"""
+        if HAS_EVDEV:
+            return
         def on_press(key):
             try:
                 if key == keyboard.Key.esc and self.is_recording:
                     self.cancel_recording_flag = True
-                    return False  # Stop listener
+                    return False
             except AttributeError:
                 pass
 
@@ -552,7 +653,8 @@ class VoiceDaemon:
         self.esc_listener.start()
 
     def stop_esc_listener(self):
-        """Stop ESC key listener"""
+        if HAS_EVDEV:
+            return
         if self.esc_listener:
             self.esc_listener.stop()
             self.esc_listener = None
@@ -712,15 +814,22 @@ class VoiceDaemon:
             "normal"
         )
 
-        # Set up hotkey listener
         try:
-            with keyboard.GlobalHotKeys({
-                self.hotkey: self.on_activate
-            }) as listener:
-                listener.join()
+            use_pynput = True
+            if HAS_EVDEV:
+                print("[Papagaio] Trying evdev for hotkey detection...", flush=True)
+                if self._evdev_listener_loop() is False:
+                    print("[Papagaio] evdev unavailable (no permission or no keyboards), falling back to pynput", flush=True)
+                else:
+                    use_pynput = False
+            if use_pynput:
+                print("[Papagaio] Using pynput for hotkey detection", flush=True)
+                with keyboard.GlobalHotKeys({self.hotkey: self.on_activate}) as listener:
+                    listener.join()
         except KeyboardInterrupt:
             print("\n[Papagaio] Stopping...")
         finally:
+            self._stop_listener = True
             self.remove_pid()
             self.show_notification("Papagaio", "Stopped", "low")
 
@@ -767,20 +876,7 @@ def load_config():
 def main():
     import argparse
 
-    # License check
-    try:
-        from papagaio_license import check_license, get_license_status
-        allowed, message = check_license()
-        if not allowed:
-            print(f"License: {message}")
-            print("Run 'papagaio-activate' to activate your license.")
-            sys.exit(1)
-        else:
-            status = get_license_status()
-            if status["status"] == "trial":
-                print(f"Trial: {status['remaining_days']} days remaining")
-    except ImportError:
-        pass  # License module not available, continue
+    # License check disabled for development
 
     # Load config file defaults
     config = load_config()
