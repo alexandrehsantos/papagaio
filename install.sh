@@ -250,40 +250,38 @@ interactive_config() {
     echo -e "  ${BOLD}${BLUE}Configuration${NC}"
     echo -e "  ─────────────────────────────────────"
 
-    # Language
-    echo ""
-    echo -e "  ${BOLD}Interface language:${NC}"
-    echo "    en - English"
-    echo "    pt - Portugues"
-    LANG_CONFIG=$(ask_question "Language" "$DEFAULT_LANG")
+    # Interface language
+    select_option "Interface language:" 0 \
+        "en  - English" \
+        "pt  - Português"
+    LANG_CONFIG="$SELECTED"
 
-    # Model
-    echo ""
-    echo -e "  ${BOLD}Whisper model:${NC}"
-    echo "    tiny   -  ~75 MB  | Fast   | Basic accuracy"
-    echo "    base   - ~140 MB  | Fast   | Good accuracy"
-    echo "    small  - ~460 MB  | Medium | Great accuracy (recommended)"
-    echo "    medium - ~1.5 GB  | Slow   | Best accuracy"
-    MODEL_CONFIG=$(ask_question "Model" "$DEFAULT_MODEL")
+    # Whisper model
+    select_option "Whisper model:" 2 \
+        "tiny    ~75 MB   Fast    Basic accuracy" \
+        "base   ~140 MB   Fast    Good accuracy" \
+        "small  ~460 MB   Medium  Great accuracy (recommended)" \
+        "medium ~1.5 GB   Slow    Best accuracy"
+    MODEL_CONFIG="$SELECTED"
 
     # Transcription language
-    echo ""
-    echo -e "  ${BOLD}Transcription language:${NC}"
-    echo "    auto - Auto-detect spoken language"
-    echo "    en   - English only"
-    echo "    pt   - Portuguese only"
-    echo "    (or any Whisper-supported language code)"
-    TRANSCRIPTION_LANG_CONFIG=$(ask_question "Transcription language" "$DEFAULT_TRANSCRIPTION_LANG")
+    select_option "Transcription language:" 0 \
+        "auto  Auto-detect spoken language" \
+        "en    English only" \
+        "pt    Portuguese only"
+    TRANSCRIPTION_LANG_CONFIG="$SELECTED"
 
-    # Hotkey
+    # Hotkey (free text — too many combinations for a list)
     echo ""
     echo -e "  ${BOLD}Hotkey:${NC}"
     echo "    Examples: <ctrl>+<alt>+v, <ctrl>+<shift>+v, <super>+v"
     HOTKEY_CONFIG=$(ask_question "Hotkey" "$DEFAULT_HOTKEY")
 
-    # Autostart
-    echo ""
-    AUTOSTART_CONFIG=$(ask_question "Auto-start on login?" "$DEFAULT_AUTOSTART")
+    # Auto-start
+    select_option "Auto-start on login?" 0 \
+        "yes" \
+        "no"
+    AUTOSTART_CONFIG="$SELECTED"
 
     # Summary
     echo ""
