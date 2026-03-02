@@ -82,7 +82,7 @@ select_option() {
 
     # Hide cursor
     tput civis 2>/dev/null || true
-    trap 'tput cnorm 2>/dev/null; trap - INT TERM' INT TERM
+    trap 'tput cnorm 2>/dev/null; trap - INT TERM; kill -INT $$' INT TERM
 
     # Render function
     _render_opts() {
@@ -103,8 +103,8 @@ select_option() {
         # Read one char; arrow keys send 3 chars: ESC [ A/B
         IFS= read -s -n1 key || true
         if [[ $key == $'\x1b' ]]; then
-            IFS= read -s -n1 -t 0.1 k2
-            IFS= read -s -n1 -t 0.1 k3
+            IFS= read -s -n1 -t 0.1 k2 || true
+            IFS= read -s -n1 -t 0.1 k3 || true
             if [[ $k2 == '[' ]]; then
                 case $k3 in
                     A) current=$(( (current - 1 + count) % count )) ;;  # up
