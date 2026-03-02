@@ -70,9 +70,19 @@ select_option() {
     local options=("$@")
     local count=${#options[@]}
     local current=$default
+    if ! [[ "$default" =~ ^[0-9]+$ ]] || [[ "$default" -ge "$count" ]]; then
+        current=0
+    fi
+
+    if [[ ! -t 0 ]]; then
+        SELECTED="${options[$current]}"
+        SELECTED="${SELECTED%% *}"
+        return 0
+    fi
 
     # Hide cursor
     tput civis 2>/dev/null || true
+    trap 'tput cnorm 2>/dev/null; trap - INT TERM' INT TERM
 
     # Render function
     _render_opts() {
@@ -91,14 +101,14 @@ select_option() {
 
     while true; do
         # Read one char; arrow keys send 3 chars: ESC [ A/B
-        IFS= read -s -n1 key
+        IFS= read -s -n1 key || true
         if [[ $key == $'\x1b' ]]; then
             IFS= read -s -n1 -t 0.1 k2
             IFS= read -s -n1 -t 0.1 k3
             if [[ $k2 == '[' ]]; then
                 case $k3 in
-                    A) (( current = (current - 1 + count) % count )) ;;  # up
-                    B) (( current = (current + 1) % count )) ;;           # down
+                    A) current=$(( (current - 1 + count) % count )) ;;  # up
+                    B) current=$(( (current + 1) % count )) ;;           # down
                 esac
             fi
         elif [[ $key == '' ]]; then
@@ -110,6 +120,8 @@ select_option() {
         _render_opts
     done
 
+    trap - INT TERM
+    unset -f _render_opts
     tput cnorm 2>/dev/null || true  # restore cursor
     SELECTED="${options[$current]}"
 
