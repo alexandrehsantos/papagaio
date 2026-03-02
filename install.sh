@@ -56,7 +56,7 @@ ask_question() {
     local question=$1
     local default=$2
     local response
-    echo -e -n "  ${BOLD}$question${NC} [${GREEN}$default${NC}]: "
+    echo -e -n "  ${BOLD}$question${NC} [${GREEN}$default${NC}]: " >&2
     read response
     echo "${response:-$default}"
 }
