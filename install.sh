@@ -61,6 +61,62 @@ ask_question() {
     echo "${response:-$default}"
 }
 
+select_option() {
+    # Usage: select_option "Title" default_index "opt1" "opt2" ...
+    # Returns selected value in $SELECTED
+    local title=$1
+    local default=$2
+    shift 2
+    local options=("$@")
+    local count=${#options[@]}
+    local current=$default
+
+    # Hide cursor
+    tput civis 2>/dev/null || true
+
+    # Render function
+    _render_opts() {
+        for i in "${!options[@]}"; do
+            if [ "$i" -eq "$current" ]; then
+                echo -e "    ${CYAN}${BOLD}❯ ${options[$i]}${NC}"
+            else
+                echo -e "      ${options[$i]}"
+            fi
+        done
+    }
+
+    echo ""
+    echo -e "  ${BOLD}${title}${NC}"
+    _render_opts
+
+    while true; do
+        # Read one char; arrow keys send 3 chars: ESC [ A/B
+        IFS= read -s -n1 key
+        if [[ $key == $'\x1b' ]]; then
+            IFS= read -s -n1 -t 0.1 k2
+            IFS= read -s -n1 -t 0.1 k3
+            if [[ $k2 == '[' ]]; then
+                case $k3 in
+                    A) (( current = (current - 1 + count) % count )) ;;  # up
+                    B) (( current = (current + 1) % count )) ;;           # down
+                esac
+            fi
+        elif [[ $key == '' ]]; then
+            break  # Enter
+        fi
+
+        # Move cursor up $count lines and redraw
+        tput cuu "$count" 2>/dev/null || printf '\033[%dA' "$count"
+        _render_opts
+    done
+
+    tput cnorm 2>/dev/null || true  # restore cursor
+    SELECTED="${options[$current]}"
+
+    # Extract just the key (first word before spaces/dash)
+    SELECTED="${SELECTED%% *}"
+}
+
 die() {
     print_error "$1"
     exit 1
