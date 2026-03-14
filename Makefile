@@ -1,104 +1,77 @@
-.PHONY: help install uninstall test clean build-deb build-pypi build-all lint format
+.PHONY: help install uninstall test clean build-deb build-appimage build-all lint format release
 
-# Variables
-PYTHON := python3
-PIP := pip3
 PROJECT := papagaio
-VERSION := 1.0.1
+VERSION := 1.2.0
 
-# Default target
 help:
-	@echo "Papagaio - Build System"
+	@echo "Papagaio v$(VERSION) - Build System"
 	@echo ""
-	@echo "Usage: make [target]"
+	@echo "Usage: make <target>"
 	@echo ""
 	@echo "Development:"
-	@echo "  install       - Install locally using install.sh"
-	@echo "  uninstall     - Uninstall using uninstall.sh"
-	@echo "  test          - Run daemon in test mode"
-	@echo "  lint          - Run code quality checks"
-	@echo "  format        - Format code with black"
+	@echo "  install       Install locally (./install.sh)"
+	@echo "  uninstall     Uninstall (./uninstall.sh)"
+	@echo "  test          Run daemon in foreground"
+	@echo "  lint          Run flake8"
+	@echo "  format        Format with black"
 	@echo ""
 	@echo "Packaging:"
-	@echo "  build-deb     - Build Debian package (.deb)"
-	@echo "  build-pypi    - Build Python package (PyPI)"
-	@echo "  build-all     - Build all packages"
+	@echo "  build-deb     Build .deb (PyInstaller + dpkg)"
+	@echo "  build-appimage Build AppImage"
+	@echo "  build-all     Build all packages"
 	@echo ""
 	@echo "Cleanup:"
-	@echo "  clean         - Remove build artifacts"
-	@echo ""
-	@echo "Release:"
-	@echo "  release       - Create GitHub release"
+	@echo "  clean         Remove all build artifacts"
 	@echo ""
 
 install:
-	@echo "Installing Papagaio..."
 	./install.sh
 
 uninstall:
-	@echo "Uninstalling Papagaio..."
 	./uninstall.sh
 
 test:
-	@echo "Testing daemon in foreground mode..."
-	$(PYTHON) papagaio.py -m small
+	@echo "Running daemon in foreground..."
+	python3 papagaio.py -m small
 
 lint:
-	@echo "Running linters..."
-	@which flake8 > /dev/null || $(PIP) install --user flake8
 	flake8 papagaio.py --max-line-length=120 --ignore=E501,W503 || true
-	@echo "✓ Lint complete"
 
 format:
-	@echo "Formatting code..."
-	@which black > /dev/null || $(PIP) install --user black
 	black papagaio.py --line-length=120
-	@echo "✓ Format complete"
-
-clean:
-	@echo "Cleaning build artifacts..."
-	rm -rf build/ dist/ *.egg-info/
-	rm -rf debian/papagaio
-	rm -f ../*.deb ../*.build ../*.buildinfo ../*.changes ../*.dsc ../*.tar.xz
-	rm -rf __pycache__/ .pytest_cache/
-	find . -name "*.pyc" -delete
-	find . -name "*.pyo" -delete
-	find . -name "*~" -delete
-	@echo "✓ Clean complete"
 
 build-deb:
-	@echo "Building Debian package..."
-	chmod +x packaging/build-deb.sh
-	./packaging/build-deb.sh
+	chmod +x build-deb.sh
+	./build-deb.sh
 
-build-pypi:
-	@echo "Building PyPI package..."
-	chmod +x packaging/build-pypi.sh
-	./packaging/build-pypi.sh
+build-appimage:
+	chmod +x build-appimage.sh
+	./build-appimage.sh
 
-build-all: clean
-	@echo "Building all packages..."
-	@make build-pypi
-	@echo ""
-	@echo "Note: build-deb requires debuild (run manually if needed)"
-	@echo ""
-	@echo "✓ All packages built"
+build-all: clean build-deb build-appimage
+	@echo "All packages built."
+
+clean:
+	@echo "Cleaning..."
+	rm -rf build/ dist/ *.egg-info/
+	rm -rf .build-venv .build-pyinstaller .build-appimage
+	rm -rf debian/papagaio debian/.debhelper .pybuild/
+	rm -f debian/debhelper-build-stamp debian/papagaio.substvars debian/files
+	rm -f ../*.deb ../*.build ../*.buildinfo ../*.changes ../*.dsc ../*.tar.xz
+	rm -rf __pycache__/
+	find . -name "*.pyc" -delete
+	@echo "Done."
 
 release:
 	@echo "Creating release v$(VERSION)..."
-	@echo "This will:"
-	@echo "  1. Commit current changes"
-	@echo "  2. Create git tag v$(VERSION)"
-	@echo "  3. Push to GitHub"
-	@echo "  4. Create GitHub release"
-	@echo ""
 	@read -p "Continue? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
-	git add .
-	git commit -m "chore: prepare release v$(VERSION)" || true
 	git tag -a "v$(VERSION)" -m "Release v$(VERSION)"
 	git push origin main
 	git push origin "v$(VERSION)"
-	gh release create "v$(VERSION)" --generate-notes
-	@echo "✓ Release complete"
+	gh release create "v$(VERSION)" \
+		dist/Papagaio-$(VERSION)-$$(uname -m).AppImage \
+		../papagaio_$(VERSION)-2_amd64.deb \
+		--generate-notes
+	@echo "Done."
 
 .DEFAULT_GOAL := help

@@ -50,6 +50,12 @@ models/
 *.pid
 
 # Debian package build artifacts
+debian/papagaio/
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/papagaio.substvars
+debian/files
+.pybuild/
 ../*.deb
 ../*.build
 ../*.buildinfo
@@ -59,7 +65,10 @@ models/
 ../*.tar.gz
 ../*.upload
 
-# Next Steps / TODO
-# Register project on Launchpad: https://launchpad.net/projects/+new
-# Publish to PyPI: ./packaging/build-pypi.sh prod
-# Create PPA: See docs/LAUNCHPAD-SETUP.md
+# PyInstaller build artifacts
+.build-venv/
+.build-pyinstaller/
+.build-appimage/
+
+# Analysis artifacts
+codebase_analysis.md

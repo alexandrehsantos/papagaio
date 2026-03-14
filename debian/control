@@ -2,31 +2,30 @@ Source: papagaio
 Section: sound
 Priority: optional
 Maintainer: Alexandre Santos <alexandrehsantos@example.com>
-Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptools
+Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.6.0
 Homepage: https://github.com/alexandrehsantos/papagaio
 Vcs-Browser: https://github.com/alexandrehsantos/papagaio
 Vcs-Git: https://github.com/alexandrehsantos/papagaio.git
 
 Package: papagaio
-Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends},
-         python3 (>= 3.8),
-         python3-pip,
-         portaudio19-dev,
+Architecture: amd64
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         libportaudio2,
          xdotool,
-         libportaudio2
-Recommends: python3-pyaudio, python3-pynput
+         xclip
+Recommends: libnotify-bin
 Description: Voice-to-text daemon for Linux using OpenAI Whisper
- Papagaio is a professional voice input system that runs as a
- background service and transcribes speech to text using OpenAI's Whisper
- model.
+ Papagaio is a voice input daemon that runs as a background service
+ and transcribes speech to text using OpenAI's Whisper model.
+ .
+ Self-contained binary. No Python runtime required.
  .
  Features:
-  * Global hotkey support (Ctrl+Shift+Alt+V)
+  * Global hotkey (Ctrl+Alt+V by default)
   * 100% local processing (privacy-first)
-  * Voice Activity Detection (VAD)
-  * Manual control (stop/cancel)
+  * Voice Activity Detection (VAD) with auto-stop
+  * Manual stop and cancel support
   * Bilingual interface (English/Portuguese)
-  * Systemd integration with auto-start
-  * Works everywhere (terminal, browser, IDE)
+  * Systemd user service with auto-start

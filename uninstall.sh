@@ -22,57 +22,29 @@ CACHE_DIR="$HOME/.cache/whisper-models"
 SERVICE_DIR="$HOME/.config/systemd/user"
 
 print_header() {
-    echo -e "${RED}${BOLD}"
-    echo "============================================================"
-    echo "  Papagaio - Uninstaller"
-    echo "============================================================"
-    echo -e "${NC}"
-}
-
-print_success() {
-    echo -e "${GREEN}✓${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}✗${NC} $1"
-}
-
-print_info() {
-    echo -e "${BLUE}ℹ${NC} $1"
-}
-
-ask_confirmation() {
-    echo -e -n "${YELLOW}${BOLD}Are you sure you want to uninstall?${NC} [yes/NO]: "
-    read response
-    if [ "$response" != "yes" ]; then
-        echo "Uninstall cancelled."
-        exit 0
-    fi
-}
-
-ask_remove_cache() {
     echo ""
-    echo -e "${BOLD}Remove downloaded Whisper models?${NC}"
-    print_info "Location: $CACHE_DIR"
-    local size=$(du -sh "$CACHE_DIR" 2>/dev/null | cut -f1 || echo "unknown")
-    print_info "Size: $size"
-    echo -e -n "${YELLOW}Remove models?${NC} [yes/NO]: "
-    read response
-    echo "$response"
+    echo -e "${RED}${BOLD}============================================${NC}"
+    echo -e "${RED}${BOLD}  Papagaio Uninstaller${NC}"
+    echo -e "${RED}${BOLD}============================================${NC}"
+    echo ""
 }
 
-ask_remove_config() {
-    echo ""
-    echo -e "${BOLD}Remove configuration files?${NC}"
-    print_info "Location: $CONFIG_DIR"
-    echo -e -n "${YELLOW}Remove config?${NC} [yes/NO]: "
+print_success() { echo -e "  ${GREEN}✓${NC} $1"; }
+print_error()   { echo -e "  ${RED}✗${NC} $1"; }
+print_info()    { echo -e "  ${BLUE}ℹ${NC} $1"; }
+print_warning() { echo -e "  ${YELLOW}⚠${NC} $1"; }
+
+ask_yes_no() {
+    local prompt=$1
+    local response
+    echo -e -n "  ${YELLOW}${BOLD}$prompt${NC} [yes/NO]: "
     read response
-    echo "$response"
+    [[ "$response" == "yes" ]]
 }
+
+# ─── Stop and remove service ──────────────────────────────
 
 stop_service() {
-    print_info "Stopping service..."
-
     if systemctl --user is-active papagaio &>/dev/null; then
         systemctl --user stop papagaio
         print_success "Service stopped"
@@ -85,26 +57,24 @@ stop_service() {
 }
 
 remove_service() {
-    print_info "Removing systemd service..."
-
     local service_file="$SERVICE_DIR/papagaio.service"
 
     if [ -f "$service_file" ]; then
         rm -f "$service_file"
         systemctl --user daemon-reload
-        print_success "Service removed"
+        print_success "Service file removed"
     else
-        print_info "Service file not found (already removed?)"
+        print_info "Service file not found (already removed)"
     fi
 }
 
-remove_files() {
-    print_info "Removing installation files..."
+# ─── Remove files ─────────────────────────────────────────
 
+remove_files() {
     # Remove symlink
     if [ -L "$BIN_DIR/papagaio-ctl" ]; then
         rm -f "$BIN_DIR/papagaio-ctl"
-        print_success "Removed papagaio-ctl command"
+        print_success "Removed papagaio-ctl symlink"
     fi
 
     # Remove installation directory
@@ -114,12 +84,16 @@ remove_files() {
     fi
 }
 
+# ─── Remove config ────────────────────────────────────────
+
 remove_config() {
     if [ -d "$CONFIG_DIR" ]; then
         rm -rf "$CONFIG_DIR"
         print_success "Removed configuration"
     fi
 }
+
+# ─── Remove cache ─────────────────────────────────────────
 
 remove_cache() {
     if [ -d "$CACHE_DIR" ]; then
@@ -128,84 +102,79 @@ remove_cache() {
     fi
 }
 
-check_path_entry() {
-    # Check if we added PATH entry
+# ─── Clean PATH entry ─────────────────────────────────────
+
+clean_path_entry() {
     local shell_configs=("$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile")
 
     for config in "${shell_configs[@]}"; do
         if [ -f "$config" ] && grep -q "Added by Papagaio installer" "$config"; then
             print_info "Found PATH entry in $config"
-            echo -e -n "${YELLOW}Remove PATH entry?${NC} [yes/NO]: "
-            read response
-
-            if [ "$response" = "yes" ]; then
-                # Remove the lines
+            if ask_yes_no "Remove PATH entry?"; then
                 sed -i '/Added by Papagaio installer/,+1d' "$config"
                 print_success "Removed PATH entry from $config"
-                print_info "Restart terminal for changes to take effect"
             fi
         fi
     done
 }
 
-print_final_info() {
-    echo ""
-    echo -e "${GREEN}${BOLD}╔════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}${BOLD}║              Uninstallation Complete!                      ║${NC}"
-    echo -e "${GREEN}${BOLD}╚════════════════════════════════════════════════════════════╝${NC}"
-    echo ""
-    echo -e "${BOLD}Removed:${NC}"
-    echo "  ✓ Voice daemon service"
-    echo "  ✓ Installation files"
-    echo "  ✓ Command-line tools"
-    echo ""
-    print_info "Thank you for using Papagaio!"
-    echo ""
-    print_info "To reinstall: ./install.sh"
-    echo ""
-}
+# ─── Main ─────────────────────────────────────────────────
 
 main() {
     print_header
 
-    # Confirmation
-    ask_confirmation
+    # Confirm
+    if ! ask_yes_no "Are you sure you want to uninstall Papagaio?"; then
+        echo "  Cancelled."
+        exit 0
+    fi
 
-    echo ""
-    echo -e "${BOLD}Uninstalling...${NC}"
     echo ""
 
     # Stop and remove service
+    print_info "Stopping service..."
     stop_service
     remove_service
 
-    # Remove files
+    # Remove installed files
+    print_info "Removing files..."
     remove_files
 
     # Ask about config
-    local remove_cfg=$(ask_remove_config)
-    if [ "$remove_cfg" = "yes" ]; then
-        remove_config
-    else
-        print_info "Configuration preserved at $CONFIG_DIR"
+    echo ""
+    if [ -d "$CONFIG_DIR" ]; then
+        if ask_yes_no "Remove configuration ($CONFIG_DIR)?"; then
+            remove_config
+        else
+            print_info "Configuration preserved at $CONFIG_DIR"
+        fi
     fi
 
     # Ask about cache
     if [ -d "$CACHE_DIR" ]; then
-        local remove_mdl=$(ask_remove_cache)
-        if [ "$remove_mdl" = "yes" ]; then
+        local size
+        size=$(du -sh "$CACHE_DIR" 2>/dev/null | cut -f1 || echo "unknown")
+        echo ""
+        print_info "Model cache: $CACHE_DIR ($size)"
+        if ask_yes_no "Remove downloaded models?"; then
             remove_cache
         else
             print_info "Models preserved at $CACHE_DIR"
         fi
     fi
 
-    # Check PATH entry
+    # Clean PATH
     echo ""
-    check_path_entry
+    clean_path_entry
 
-    # Final info
-    print_final_info
+    # Done
+    echo ""
+    echo -e "${GREEN}${BOLD}============================================${NC}"
+    echo -e "${GREEN}${BOLD}  Uninstall complete${NC}"
+    echo -e "${GREEN}${BOLD}============================================${NC}"
+    echo ""
+    print_info "To reinstall: ${CYAN}./install.sh${NC}"
+    echo ""
 }
 
 main

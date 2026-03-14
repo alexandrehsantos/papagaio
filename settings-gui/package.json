@@ -1,0 +1,211 @@
+{
+  "name": "papagaio-settings",
+  "version": "1.2.0",
+  "description": "Papagaio - Voice-to-Text Configuration",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:linux": "electron-builder --linux",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:all": "electron-builder -mwl",
+    "dist": "electron-builder --publish never",
+    "release": "electron-builder --publish always",
+    "test": "node test-e2e.js",
+    "test:interactive": "node test-interactive.js"
+  },
+  "author": {
+    "name": "Bulvee",
+    "email": "support@bulvee.com",
+    "url": "https://bulvee.com"
+  },
+  "homepage": "https://bulvee.gumroad.com/l/papagaio",
+  "license": "Proprietary",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bulvee/papagaio"
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "ws": "^8.19.0"
+  },
+  "build": {
+    "appId": "com.bulvee.papagaio",
+    "productName": "Papagaio",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "copyright": "Copyright © 2024 Bulvee",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "**/*",
+      "!test-*.js",
+      "!*.md",
+      "!dist/**"
+    ],
+    "extraMetadata": {
+      "main": "main.js"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "rpm",
+          "arch": ["x64"]
+        },
+        {
+          "target": "tar.gz",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "category": "Utility;AudioVideo;Audio",
+      "icon": "build/icons",
+      "synopsis": "Voice-to-Text Configuration",
+      "description": "Configure Papagaio voice-to-text daemon settings. Adjust recognition quality, hotkeys, audio settings, and transcription language.",
+      "desktop": {
+        "Name": "Papagaio Settings",
+        "Name[pt]": "Configurações do Papagaio",
+        "GenericName": "Voice-to-Text Settings",
+        "GenericName[pt]": "Configurações de Voz para Texto",
+        "Comment": "Configure voice recognition settings",
+        "Comment[pt]": "Configure as configurações de reconhecimento de voz",
+        "Keywords": "voice;speech;transcription;whisper;dictation;",
+        "StartupWMClass": "papagaio-settings"
+      },
+      "mimeTypes": [
+        "x-scheme-handler/papagaio"
+      ]
+    },
+    "deb": {
+      "depends": [
+        "libgtk-3-0",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libuuid1"
+      ],
+      "recommends": [
+        "papagaio"
+      ],
+      "category": "utils",
+      "priority": "optional",
+      "compression": "xz"
+    },
+    "rpm": {
+      "depends": [
+        "gtk3",
+        "libnotify",
+        "nss",
+        "libXScrnSaver",
+        "libXtst",
+        "xdg-utils",
+        "at-spi2-core",
+        "libuuid"
+      ]
+    },
+    "appImage": {
+      "license": "LICENSE",
+      "category": "Utility"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "publisherName": "Bulvee",
+      "legalTrademarks": "Papagaio is a trademark of Bulvee",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Papagaio Settings",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeader": "build/installer-header.bmp",
+      "installerSidebar": "build/installer-sidebar.bmp",
+      "license": "LICENSE",
+      "language": "1033",
+      "multiLanguageInstaller": true,
+      "installerLanguages": ["en_US", "pt_BR"],
+      "packElevateHelper": true,
+      "allowElevation": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.utilities",
+      "darkModeSupport": true,
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "minimumSystemVersion": "10.13"
+    },
+    "dmg": {
+      "background": "build/dmg-background.png",
+      "icon": "build/icon.icns",
+      "iconSize": 128,
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 400
+      },
+      "title": "Papagaio ${version}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "bulvee",
+        "repo": "papagaio",
+        "releaseType": "release"
+      }
+    ]
+  }
+}
