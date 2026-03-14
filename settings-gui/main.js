@@ -7,8 +7,6 @@ const { execFile } = require('child_process');
 // Config file paths
 const CONFIG_DIR = path.join(os.homedir(), '.config', 'papagaio');
 const CONFIG_FILE = path.join(CONFIG_DIR, 'config.ini');
-const LICENSE_FILE = path.join(CONFIG_DIR, '.license');
-const TRIAL_FILE = path.join(CONFIG_DIR, '.trial');
 
 let mainWindow;
 let tray = null;
@@ -406,62 +404,6 @@ ipcMain.handle('check-daemon-status', async () => {
   return checkDaemonStatus();
 });
 
-// Get license status
-ipcMain.handle('get-license-status', async () => {
-  try {
-    // Check for valid license
-    if (fs.existsSync(LICENSE_FILE)) {
-      const licenseData = JSON.parse(fs.readFileSync(LICENSE_FILE, 'utf-8'));
-      if (licenseData.key) {
-        return {
-          status: 'licensed',
-          email: licenseData.email,
-          message: 'License active'
-        };
-      }
-    }
-
-    // Check trial status
-    if (fs.existsSync(TRIAL_FILE)) {
-      const trialData = JSON.parse(fs.readFileSync(TRIAL_FILE, 'utf-8'));
-      const startDate = new Date(trialData.start_date);
-      const now = new Date();
-      const elapsed = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
-      const remaining = Math.max(0, 7 - elapsed);
-
-      if (remaining > 0) {
-        return {
-          status: 'trial',
-          remaining_days: remaining,
-          message: `Trial: ${remaining} days remaining`
-        };
-      } else {
-        return {
-          status: 'expired',
-          message: 'Trial expired. Please purchase a license.'
-        };
-      }
-    }
-
-    // First run - create trial
-    const trialData = {
-      start_date: new Date().toISOString(),
-      machine_id: os.hostname()
-    };
-    fs.writeFileSync(TRIAL_FILE, JSON.stringify(trialData));
-
-    return {
-      status: 'trial',
-      remaining_days: 7,
-      message: 'Trial: 7 days remaining'
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.message
-    };
-  }
-});
 
 // Browse for directory
 ipcMain.handle('browse-directory', async () => {

@@ -51,6 +51,59 @@ try:
 except ImportError:
     pass
 
+# Hallucination patterns - common Whisper artifacts to filter out
+_HALLUCINATION_PATTERNS = {
+    # English artifacts
+    "thanks for watching", "thank you for watching",
+    "please subscribe", "like and subscribe",
+    "thanks for listening", "thank you for listening",
+    "see you next time", "see you in the next video",
+    "continue watching", "don't forget to subscribe",
+    "you", "bye", "hello",
+    # Portuguese artifacts
+    "obrigado por assistir", "obrigada por assistir",
+    "legendas por", "legendado por", "tradução por",
+    "inscreva-se", "se inscreva", "curta e inscreva",
+    "obrigado por ouvir", "obrigada por ouvir",
+    "até a próxima", "até o próximo vídeo",
+    "tchau", "olá",
+    # Spanish artifacts
+    "gracias por ver", "suscribete",
+    # Common noise transcriptions
+    "...", "…", "hm", "hmm", "uh", "um", "ah",
+}
+
+
+def _is_hallucination(text):
+    """Detect Whisper hallucinations and stutters."""
+    if not text:
+        return True
+
+    lower = text.strip().lower().rstrip(".!?,")
+
+    # Empty after cleanup
+    if not lower:
+        return True
+
+    # Known hallucination patterns
+    if lower in _HALLUCINATION_PATTERNS:
+        return True
+
+    # Detect repeated words/stutters (e.g., "as as as as")
+    words = lower.split()
+    if len(words) >= 3:
+        # Check if same word repeated 3+ times
+        for i in range(len(words) - 2):
+            if words[i] == words[i+1] == words[i+2]:
+                return True
+
+    # Very short single-word responses are often noise
+    if len(words) == 1 and len(lower) <= 3:
+        return True
+
+    return False
+
+
 # Optional: cross-platform notifications
 try:
     from plyer import notification as plyer_notification
@@ -133,9 +186,10 @@ MESSAGES = {
 
 
 class VoiceDaemon:
-    def __init__(self, model_size="small", hotkey="<ctrl>+<shift>+<alt>+v", use_ydotool=False, model_cache_dir=None, lang="en", silence_threshold=None, silence_duration=None, transcription_language="auto", edit_before_send=False):
+    def __init__(self, model_size="small", hotkey="<ctrl>+<shift>+<alt>+v", secondary_hotkey="", use_ydotool=False, model_cache_dir=None, lang="en", silence_threshold=None, silence_duration=None, transcription_language="auto", edit_before_send=False):
         self.model_size = model_size
         self.hotkey = hotkey
+        self.secondary_hotkey = secondary_hotkey
         self.use_ydotool = use_ydotool
         self.model_cache_dir = model_cache_dir or os.path.expanduser("~/.cache/whisper-models")
         self.lang = lang if lang in MESSAGES else "en"
@@ -150,6 +204,8 @@ class VoiceDaemon:
         self.pid_file = os.path.join(tempfile.gettempdir(), "papagaio.pid")
         self._hotkey_cooldown = 0
         self._stop_listener = False
+        self._target_window_id = None
+        self._typing_in_progress = False
 
         # Audio settings for VAD
         self.CHUNK = CHUNK_SIZE
@@ -239,7 +295,7 @@ class VoiceDaemon:
                                     for group in modifier_groups
                                 )
                                 now = time.monotonic()
-                                if modifiers_held and now - self._hotkey_cooldown > 1.0:
+                                if modifiers_held and now - self._hotkey_cooldown > 2.0:
                                     self._hotkey_cooldown = now
                                     self.on_activate()
                             if event.code == evdev.ecodes.KEY_ESC and self.is_recording:
@@ -250,34 +306,154 @@ class VoiceDaemon:
                     pass
         return True
 
-    _PYNPUT_MODIFIER_MAP = {
-        '<ctrl>': {Key.ctrl_l, Key.ctrl_r, Key.ctrl},
-        '<shift>': {Key.shift, Key.shift_l, Key.shift_r},
-        '<alt>': {Key.alt_l, Key.alt_r, Key.alt,
-                  KeyCode.from_vk(65511), KeyCode.from_vk(65513), KeyCode.from_vk(65514)},
-        '<super>': {Key.cmd, Key.cmd_l, Key.cmd_r},
-        '<cmd>': {Key.cmd, Key.cmd_l, Key.cmd_r},
+    # X11 keysym values for modifier keys
+    _MODIFIER_KEYSYMS = {
+        '<ctrl>': {65507, 65508},      # Control_L, Control_R
+        '<shift>': {65505, 65506},     # Shift_L, Shift_R
+        '<alt>': {65513, 65514, 65511, 65027},  # Alt_L, Alt_R, Meta_L, ISO_Level3_Shift
+        '<super>': {65515, 65516},     # Super_L, Super_R
+        '<cmd>': {65515, 65516},       # Super_L, Super_R
     }
 
+    @staticmethod
+    def _key_to_keysym(key):
+        """Extract X11 keysym from any pynput key object"""
+        if hasattr(key, 'vk') and key.vk is not None:
+            return key.vk
+        if hasattr(key, 'value') and key.value is not None:
+            v = key.value
+            if isinstance(v, int):
+                return v
+            if hasattr(v, 'vk') and v.vk is not None:
+                return v.vk
+            try:
+                return int(v)
+            except (TypeError, ValueError):
+                pass
+        return None
+
     def _parse_hotkey_pynput(self, hotkey_str):
-        modifier_sets = []
+        modifier_keysym_sets = []
         trigger_char = None
         for part in hotkey_str.lower().split('+'):
             part = part.strip()
-            if part in self._PYNPUT_MODIFIER_MAP:
-                modifier_sets.append(self._PYNPUT_MODIFIER_MAP[part])
+            if part in self._MODIFIER_KEYSYMS:
+                modifier_keysym_sets.append(self._MODIFIER_KEYSYMS[part])
             elif len(part) == 1:
                 trigger_char = part
             elif part.startswith('<') and part.endswith('>'):
                 trigger_char = part.strip('<>')
-        return modifier_sets, trigger_char
+        return modifier_keysym_sets, trigger_char
+
+    def _release_modifiers(self):
+        """Release all modifier keys to prevent stuck keys after hotkey activation"""
+        if IS_LINUX and shutil.which("xdotool"):
+            try:
+                subprocess.run(
+                    ["xdotool", "keyup", "ctrl", "shift", "alt", "super"],
+                    timeout=2, stderr=subprocess.DEVNULL
+                )
+            except Exception:
+                pass
+
+    def _resolve_xbindkeys_combo(self, hotkey_str):
+        """Convert a hotkey string to xbindkeys format"""
+        hotkey_lower = hotkey_str.lower().strip()
+        mouse_map = {"mouse_middle": "b:2", "mouse_right": "b:3",
+                     "mouse_back": "b:8", "mouse_forward": "b:9"}
+        if hotkey_lower in mouse_map:
+            return mouse_map[hotkey_lower]
+
+        hotkey_parts = hotkey_lower.split('+')
+        xbk_parts = []
+        for part in hotkey_parts:
+            part = part.strip().strip('<>')
+            mapping = {"ctrl": "control", "alt": "alt", "shift": "shift",
+                       "super": "mod4", "cmd": "mod4"}
+            xbk_parts.append(mapping.get(part, part))
+        return "+".join(xbk_parts)
+
+    def _xbindkeys_listener_loop(self):
+        """Hotkey listener using xbindkeys (most reliable X11 hotkey method)"""
+        if not shutil.which("xbindkeys"):
+            return False
+
+        pid = os.getpid()
+        rc_path = os.path.join(tempfile.gettempdir(), f"papagaio_{pid}.xbindkeysrc")
+
+        combos = []
+        xbk_primary = self._resolve_xbindkeys_combo(self.hotkey)
+        combos.append(xbk_primary)
+
+        if self.secondary_hotkey:
+            xbk_secondary = self._resolve_xbindkeys_combo(self.secondary_hotkey)
+            if xbk_secondary != xbk_primary:
+                combos.append(xbk_secondary)
+
+        with open(rc_path, "w") as f:
+            for combo in combos:
+                f.write(f'"kill -USR1 {pid}"\n')
+                f.write(f"  {combo}\n\n")
+
+        self._xbindkeys_proc = proc = subprocess.Popen(
+            ["xbindkeys", "-f", rc_path, "-n"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+
+        signal.signal(signal.SIGUSR1, self._on_hotkey_signal)
+
+        combo_str = " + ".join(combos) if len(combos) > 1 else combos[0]
+        print(f"[Papagaio] xbindkeys listener started (combos={combo_str})", flush=True)
+
+        try:
+            while proc.poll() is None:
+                time.sleep(0.5)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            signal.signal(signal.SIGUSR1, signal.SIG_DFL)
+            proc.terminate()
+            proc.wait()
+            try:
+                os.unlink(rc_path)
+            except OSError:
+                pass
+        return True
+
+    def _on_hotkey_signal(self, signum, frame):
+        """Handle SIGUSR1 from xbindkeys"""
+        if self._typing_in_progress:
+            return
+        if self.is_recording:
+            self.stop_recording_flag = True
+            return
+
+        now = time.monotonic()
+        if now - self._hotkey_cooldown > 2.0:
+            self._hotkey_cooldown = now
+            print("[Papagaio] Hotkey detected via xbindkeys", flush=True)
+            threading.Thread(target=self._hotkey_thread, daemon=True).start()
+
+    def _hotkey_thread(self):
+        """Run hotkey activation in a separate thread (signal handlers must be fast)"""
+        try:
+            time.sleep(0.05)
+            self._release_modifiers()
+            self.on_activate()
+        except Exception as e:
+            print(f"[Papagaio] Hotkey thread error: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
 
     def _pynput_listener_loop(self):
-        modifier_sets, trigger_char = self._parse_hotkey_pynput(self.hotkey)
-        pressed = set()
+        modifier_keysym_sets, trigger_char = self._parse_hotkey_pynput(self.hotkey)
+        pressed_keysyms = set()
 
         def on_press(key):
-            pressed.add(key)
+            keysym = self._key_to_keysym(key)
+            if keysym is not None:
+                pressed_keysyms.add(keysym)
+
             char = None
             if hasattr(key, 'char') and key.char:
                 char = key.char.lower()
@@ -285,19 +461,28 @@ class VoiceDaemon:
                 char = chr(key.vk + 32)
 
             if char == trigger_char:
-                all_held = all(bool(pressed & mset) for mset in modifier_sets)
+                all_held = all(
+                    bool(pressed_keysyms & keysym_set)
+                    for keysym_set in modifier_keysym_sets
+                )
                 now = time.monotonic()
-                if all_held and now - self._hotkey_cooldown > 1.0:
+                if all_held and now - self._hotkey_cooldown > 2.0:
                     self._hotkey_cooldown = now
+                    pressed_keysyms.clear()
+                    time.sleep(0.1)
+                    self._release_modifiers()
                     self.on_activate()
 
-            if key == Key.esc and self.is_recording:
+            esc_keysym = 65307
+            if keysym == esc_keysym and self.is_recording:
                 self.cancel_recording_flag = True
 
         def on_release(key):
-            pressed.discard(key)
+            keysym = self._key_to_keysym(key)
+            if keysym is not None:
+                pressed_keysyms.discard(keysym)
 
-        with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
+        with keyboard.Listener(on_press=on_press, on_release=on_release, suppress=False) as listener:
             listener.join()
 
     def msg(self, key):
@@ -458,24 +643,30 @@ class VoiceDaemon:
         """Transcribe audio file to text (optimized for speed)"""
         self.initialize_model()
 
-        # Adjust beam_size based on device (GPU can afford more)
-        beam_size = 3 if HAS_CUDA else 2
+        if HAS_CUDA:
+            beam_size = 5
+            best_of = 3
+            condition_on_previous = True
+        else:
+            beam_size = 3
+            best_of = 2
+            condition_on_previous = True
 
         segments, info = self.model.transcribe(
             audio_file,
             language=self.transcription_language,
             beam_size=beam_size,
-            best_of=1,  # Single pass for speed
+            best_of=best_of,
             vad_filter=True,
             vad_parameters={
-                "threshold": 0.4,
-                "min_speech_duration_ms": 150,
-                "min_silence_duration_ms": 300,
-                "speech_pad_ms": 200
+                "threshold": 0.35,
+                "min_speech_duration_ms": 100,
+                "min_silence_duration_ms": 250,
+                "speech_pad_ms": 250
             },
             without_timestamps=True,
             word_timestamps=False,
-            condition_on_previous_text=False  # Faster: don't use previous context
+            condition_on_previous_text=condition_on_previous
         )
 
         detected_lang = info.language
@@ -484,7 +675,14 @@ class VoiceDaemon:
 
         # More efficient string joining with generator
         text = " ".join(segment.text.strip() for segment in segments)
-        return text.strip()
+        text = text.strip()
+
+        # Filter hallucinations and stutters
+        if _is_hallucination(text):
+            print(f"[Papagaio] ⚠ Filtered hallucination: {text[:50]}")
+            return ""
+
+        return text
 
     def type_text_pynput(self, text):
         """Type text using pynput (cross-platform)"""
@@ -495,8 +693,7 @@ class VoiceDaemon:
             time.sleep(TYPING_DELAY_SECONDS)
             kb = KeyboardController()
             kb.type(text)
-            kb.press(Key.enter)
-            kb.release(Key.enter)
+            # Don't press Enter - let user decide
             print(f"[Papagaio] ✓ Typed (pynput): {text[:50]}...")
             return True
         except Exception as e:
@@ -504,28 +701,71 @@ class VoiceDaemon:
             return False
 
     def type_text_ydotool(self, text):
-        """Type text using ydotool (works with Wayland and X11)"""
+        """Type text using ydotool (kernel-level, bypasses IBus/X11)"""
         if not text:
             return False
 
         try:
-            # Check if ydotool is available
             if not shutil.which("ydotool"):
                 return False
 
             time.sleep(TYPING_DELAY_SECONDS)
 
             subprocess.run(
-                ["ydotool", "type", text],
-                check=True
+                ["ydotool", "type", "--", text],
+                check=True, timeout=10
             )
 
-            subprocess.run(["ydotool", "key", "28:1", "28:0"], check=True)
-
-            print(f"[Papagaio] ✓ Typed (ydotool): {text[:50]}...")
+            print(f"[Papagaio] Typed (ydotool): {text[:50]}...")
             return True
 
-        except (subprocess.CalledProcessError, FileNotFoundError):
+        except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+            return False
+
+    def type_text_clipboard_paste(self, text):
+        """Copy to clipboard and paste with Ctrl+V (most reliable on Linux)"""
+        if not text:
+            return False
+
+        try:
+            clipboard_tool = None
+            if IS_LINUX and shutil.which("xclip"):
+                clipboard_tool = "xclip"
+            elif IS_LINUX and shutil.which("wl-copy"):
+                clipboard_tool = "wl-copy"
+
+            if not clipboard_tool:
+                return False
+
+            time.sleep(TYPING_DELAY_SECONDS)
+
+            if clipboard_tool == "xclip":
+                subprocess.run(
+                    ["xclip", "-selection", "clipboard"],
+                    input=text.encode(), check=True, timeout=5
+                )
+            else:
+                subprocess.run(
+                    ["wl-copy", text],
+                    check=True, timeout=5
+                )
+
+            if shutil.which("xdotool"):
+                subprocess.run(
+                    ["xdotool", "key", "ctrl+v"],
+                    check=True, timeout=5
+                )
+            elif shutil.which("ydotool"):
+                subprocess.run(["ydotool", "key", "29:1", "47:1", "47:0", "29:0"], check=True, timeout=5)
+            else:
+                print("[Papagaio] Copied to clipboard, paste manually with Ctrl+V")
+                return True
+
+            print(f"[Papagaio] Typed (clipboard paste): {text[:50]}...")
+            return True
+
+        except (subprocess.SubprocessError, FileNotFoundError, OSError) as e:
+            print(f"[Papagaio] Clipboard paste failed: {e}")
             return False
 
     def type_text_xdotool(self, text):
@@ -539,14 +779,10 @@ class VoiceDaemon:
 
             time.sleep(TYPING_DELAY_SECONDS)
 
-            subprocess.run(
-                ["xdotool", "type", "--delay", "10", "--", text],
-                check=True
-            )
+            cmd = ["xdotool", "type", "--delay", "10", "--", text]
+            subprocess.run(cmd, check=True, timeout=30)
 
-            subprocess.run(["xdotool", "key", "Return"], check=True)
-
-            print(f"[Papagaio] ✓ Typed (xdotool): {text[:50]}...")
+            print(f"[Papagaio] Typed (xdotool type): {text[:50]}...")
             return True
 
         except (subprocess.CalledProcessError, FileNotFoundError):
@@ -559,32 +795,52 @@ class VoiceDaemon:
 
         try:
             if IS_WINDOWS:
-                # Windows: use clip command
                 subprocess.run("clip", input=text.encode('utf-16-le'), check=True, timeout=5)
             elif IS_MACOS:
-                # macOS: use pbcopy
                 subprocess.run(["pbcopy"], input=text.encode(), check=True, timeout=5)
             else:
-                # Linux: use xclip
                 subprocess.run(["xclip", "-selection", "clipboard"], input=text.encode(), check=True, timeout=5)
-            print("[Papagaio] ✓ Copied to clipboard as fallback")
+            print("[Papagaio] Copied to clipboard, paste with Ctrl+V")
             return True
         except (subprocess.SubprocessError, FileNotFoundError, OSError) as e:
             print(f"[Papagaio] Clipboard fallback failed: {e}")
             return False
 
+    def _refocus_target_window(self):
+        """Refocus the window that was active when hotkey was pressed"""
+        if self._target_window_id and IS_LINUX and shutil.which("xdotool"):
+            try:
+                subprocess.run(
+                    ["xdotool", "windowactivate", self._target_window_id],
+                    check=True, timeout=2
+                )
+                time.sleep(0.3)
+                print(f"[Papagaio] Refocused window {self._target_window_id}")
+            except Exception as e:
+                print(f"[Papagaio] Window refocus failed: {e}")
+
     def type_text(self, text):
         """Type text using available tool (cross-platform)"""
+        self._typing_in_progress = True
+        try:
+            self._refocus_target_window()
+            return self._type_text_impl(text)
+        finally:
+            self._typing_in_progress = False
+            self._hotkey_cooldown = time.monotonic()
+
+    def _type_text_impl(self, text):
         if IS_WINDOWS or IS_MACOS:
-            # On Windows and macOS, use pynput directly
             if not self.type_text_pynput(text):
                 self.type_text_clipboard(text)
+        elif self.use_ydotool:
+            if not self.type_text_ydotool(text):
+                if not self.type_text_clipboard_paste(text):
+                    if not self.type_text_xdotool(text):
+                        self.type_text_clipboard(text)
         else:
-            # On Linux, try xdotool first (more reliable with special chars)
             if not self.type_text_xdotool(text):
-                print("[Papagaio] ⚠️  xdotool failed, trying ydotool")
-                if not self.type_text_ydotool(text):
-                    print("[Papagaio] ⚠️  ydotool failed, trying pynput")
+                if not self.type_text_clipboard_paste(text):
                     if not self.type_text_pynput(text):
                         self.type_text_clipboard(text)
 
@@ -662,22 +918,21 @@ class VoiceDaemon:
     def show_notification(self, title, message, urgency="normal"):
         """Show desktop notification (cross-platform)"""
         try:
-            if HAS_PLYER:
-                # Use plyer for cross-platform notifications
-                plyer_notification.notify(
-                    title=title,
-                    message=message,
-                    app_name="Papagaio",
-                    timeout=5
-                )
-            elif IS_LINUX:
-                # Linux fallback: notify-send (replace previous notification)
+            if IS_LINUX and shutil.which("notify-send"):
                 subprocess.run(
                     ["notify-send", "-u", urgency,
+                     "-t", "3000",
                      "-h", "string:x-canonical-private-synchronous:papagaio",
                      title, message],
                     check=False,
                     timeout=5
+                )
+            elif HAS_PLYER:
+                plyer_notification.notify(
+                    title=title,
+                    message=message,
+                    app_name="Papagaio",
+                    timeout=3
                 )
             elif IS_MACOS:
                 # macOS fallback: osascript
@@ -719,6 +974,18 @@ class VoiceDaemon:
         self.stop_recording_flag = False
         self.cancel_recording_flag = False
 
+        if IS_LINUX and shutil.which("xdotool"):
+            try:
+                result = subprocess.run(
+                    ["xdotool", "getactivewindow"],
+                    capture_output=True, text=True, timeout=2
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    self._target_window_id = result.stdout.strip()
+                    print(f"[Papagaio] Saved target window: {self._target_window_id}")
+            except Exception:
+                self._target_window_id = None
+
         def record_and_transcribe():
             try:
                 # Start ESC listener
@@ -730,14 +997,13 @@ class VoiceDaemon:
                 self.stop_esc_listener()
 
                 if audio_file:
-                    print("[Papagaio] 🔄 Transcribing...")
-                    self.show_notification("Papagaio", "🔄 Transcribing...", "low")
+                    print("[Papagaio] 🔄 Transcribing...", flush=True)
 
                     text = self.transcribe(audio_file)
                     os.unlink(audio_file)
 
                     if text and len(text) > MIN_VALID_TRANSCRIPTION_LENGTH:
-                        print(f"[Papagaio] {self.msg('transcribed')}: {text}")
+                        print(f"[Papagaio] {self.msg('transcribed')}: {text}", flush=True)
 
                         # Allow editing before sending if enabled
                         if self.edit_before_send and HAS_GTK:
@@ -764,7 +1030,6 @@ class VoiceDaemon:
             finally:
                 self.stop_esc_listener()
                 self.is_recording = False
-                # Reset flags
                 self.stop_recording_flag = False
                 self.cancel_recording_flag = False
 
@@ -865,14 +1130,21 @@ class VoiceDaemon:
         )
 
         try:
-            use_pynput = True
+            listener_started = False
             if HAS_EVDEV:
                 print("[Papagaio] Trying evdev for hotkey detection...", flush=True)
-                if self._evdev_listener_loop() is False:
-                    print("[Papagaio] evdev unavailable (no permission or no keyboards), falling back to pynput", flush=True)
+                if self._evdev_listener_loop() is not False:
+                    listener_started = True
                 else:
-                    use_pynput = False
-            if use_pynput:
+                    print("[Papagaio] evdev unavailable (no permission or no keyboards)", flush=True)
+            if not listener_started and IS_LINUX:
+                print("[Papagaio] Trying xbindkeys for hotkey detection...", flush=True)
+                result = self._xbindkeys_listener_loop()
+                if result is not False:
+                    listener_started = True
+                else:
+                    print("[Papagaio] xbindkeys unavailable", flush=True)
+            if not listener_started:
                 print("[Papagaio] Using pynput for hotkey detection", flush=True)
                 self._pynput_listener_loop()
         except KeyboardInterrupt:
@@ -891,7 +1163,8 @@ def load_config():
     defaults = {
         'model': 'small',
         'language': 'en',
-        'hotkey': '<ctrl>+<shift>+<alt>+v',
+        'hotkey': '<super>+v',
+        'secondary_hotkey': '',
         'use_ydotool': False,
         'cache_dir': os.path.expanduser("~/.cache/whisper-models"),
         'silence_threshold': 200,  # Lower for better detection
@@ -908,6 +1181,7 @@ def load_config():
             defaults['model'] = config['General'].get('model', defaults['model'])
             defaults['language'] = config['General'].get('language', defaults['language'])
             defaults['hotkey'] = config['General'].get('hotkey', defaults['hotkey'])
+            defaults['secondary_hotkey'] = config['General'].get('secondary_hotkey', defaults['secondary_hotkey'])
             defaults['cache_dir'] = config['General'].get('cache_dir', defaults['cache_dir'])
             defaults['edit_before_send'] = config['General'].get('edit_before_send', 'false').lower() == 'true'
 
@@ -976,6 +1250,7 @@ def main():
     daemon = VoiceDaemon(
         model_size=args.model,
         hotkey=args.hotkey,
+        secondary_hotkey=config.get('secondary_hotkey', ''),
         use_ydotool=args.ydotool,
         model_cache_dir=config['cache_dir'],
         lang=args.lang,
