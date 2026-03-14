@@ -7,7 +7,6 @@ let config = {};
 document.addEventListener('DOMContentLoaded', async () => {
   await loadConfig();
   await updateDaemonStatus();
-  await loadLicenseStatus();
   setupEventListeners();
 
   // Update daemon status every 5 seconds
@@ -131,31 +130,6 @@ async function updateDaemonStatus() {
   textEl.textContent = isActive ? t('daemonRunning') : t('daemonStopped');
 }
 
-// Load license status
-async function loadLicenseStatus() {
-  const status = await ipcRenderer.invoke('get-license-status');
-  const statusEl = document.getElementById('license-status');
-  const titleEl = document.getElementById('license-title');
-  const messageEl = document.getElementById('license-message');
-  const activationEl = document.getElementById('activation-section');
-
-  statusEl.className = 'license-status ' + status.status;
-
-  if (status.status === 'licensed') {
-    titleEl.textContent = '✅ ' + t('licensed');
-    messageEl.textContent = status.email ? `${t('registeredTo')} ${status.email}` : t('licenseActive');
-    activationEl.style.display = 'none';
-  } else if (status.status === 'trial') {
-    titleEl.textContent = `⏱️ ${t('trial')} - ${status.remaining_days} ${t('daysRemaining')}`;
-    messageEl.textContent = t('trialMessage');
-    activationEl.style.display = 'block';
-  } else {
-    titleEl.textContent = '⚠️ ' + t('trialExpired');
-    messageEl.textContent = t('trialExpiredMessage');
-    activationEl.style.display = 'block';
-  }
-}
-
 // Setup event listeners
 function setupEventListeners() {
   // Tab switching
@@ -261,20 +235,6 @@ function setupEventListeners() {
     });
   });
 
-  // License activation
-  document.getElementById('activate_btn')?.addEventListener('click', async () => {
-    const key = document.getElementById('license_key').value.trim();
-    if (!key) {
-      showToast(t('enterLicenseKey'), 'error');
-      return;
-    }
-
-    showToast(t('validatingLicense'), 'info');
-
-    // For now, just save the key locally (real validation would call Gumroad API)
-    // This is simplified - the Python license module handles actual validation
-    showToast(t('usePapagaioActivate'), 'info');
-  });
 }
 
 // Toast notification
