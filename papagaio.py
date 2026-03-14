@@ -186,10 +186,11 @@ MESSAGES = {
 
 
 class VoiceDaemon:
-    def __init__(self, model_size="small", hotkey="<ctrl>+<shift>+<alt>+v", secondary_hotkey="", use_ydotool=False, model_cache_dir=None, lang="en", silence_threshold=None, silence_duration=None, transcription_language="auto", edit_before_send=False):
+    def __init__(self, model_size="small", hotkey="<ctrl>+<shift>+<alt>+v", secondary_hotkey="", auto_enter=False, use_ydotool=False, model_cache_dir=None, lang="en", silence_threshold=None, silence_duration=None, transcription_language="auto", edit_before_send=False):
         self.model_size = model_size
         self.hotkey = hotkey
         self.secondary_hotkey = secondary_hotkey
+        self.auto_enter = auto_enter
         self.use_ydotool = use_ydotool
         self.model_cache_dir = model_cache_dir or os.path.expanduser("~/.cache/whisper-models")
         self.lang = lang if lang in MESSAGES else "en"
@@ -819,12 +820,28 @@ class VoiceDaemon:
             except Exception as e:
                 print(f"[Papagaio] Window refocus failed: {e}")
 
+    def _press_enter(self):
+        """Press Enter key after typing"""
+        if IS_LINUX and shutil.which("xdotool"):
+            subprocess.run(["xdotool", "key", "Return"], check=False, timeout=5)
+        elif IS_LINUX and self.use_ydotool and shutil.which("ydotool"):
+            subprocess.run(["ydotool", "key", "28:1", "28:0"], check=False, timeout=5)
+        else:
+            kb = KeyboardController()
+            kb.press(Key.enter)
+            kb.release(Key.enter)
+
     def type_text(self, text):
         """Type text using available tool (cross-platform)"""
         self._typing_in_progress = True
         try:
             self._refocus_target_window()
-            return self._type_text_impl(text)
+            result = self._type_text_impl(text)
+            if self.auto_enter:
+                time.sleep(0.1)
+                self._press_enter()
+                print("[Papagaio] Auto-enter: pressed Enter", flush=True)
+            return result
         finally:
             self._typing_in_progress = False
             self._hotkey_cooldown = time.monotonic()
@@ -1165,6 +1182,7 @@ def load_config():
         'language': 'en',
         'hotkey': '<super>+v',
         'secondary_hotkey': '',
+        'auto_enter': False,
         'use_ydotool': False,
         'cache_dir': os.path.expanduser("~/.cache/whisper-models"),
         'silence_threshold': 200,  # Lower for better detection
@@ -1184,6 +1202,7 @@ def load_config():
             defaults['secondary_hotkey'] = config['General'].get('secondary_hotkey', defaults['secondary_hotkey'])
             defaults['cache_dir'] = config['General'].get('cache_dir', defaults['cache_dir'])
             defaults['edit_before_send'] = config['General'].get('edit_before_send', 'false').lower() == 'true'
+            defaults['auto_enter'] = config['General'].get('auto_enter', 'false').lower() == 'true'
 
         if 'Audio' in config:
             defaults['silence_threshold'] = int(config['Audio'].get('silence_threshold', '200'))
@@ -1251,6 +1270,7 @@ def main():
         model_size=args.model,
         hotkey=args.hotkey,
         secondary_hotkey=config.get('secondary_hotkey', ''),
+        auto_enter=config.get('auto_enter', False),
         use_ydotool=args.ydotool,
         model_cache_dir=config['cache_dir'],
         lang=args.lang,
