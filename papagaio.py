@@ -535,16 +535,8 @@ class VoiceDaemon:
         # Vectorized RMS calculation (5-10x faster than Python loop)
         return np.sqrt(np.mean(audio_data.astype(np.float32) ** 2))
 
-    _THRESHOLD_CACHE_TTL = 60  # Reuse calibration for 60 seconds
-
     def calibrate_noise_floor(self, stream, duration=0.5):
-        """Measure ambient noise level for adaptive threshold (cached)"""
-        now = time.monotonic()
-        if (hasattr(self, '_cached_threshold') and
-                now - self._threshold_timestamp < self._THRESHOLD_CACHE_TTL):
-            print(f"[Papagaio] Threshold: {self._cached_threshold} (cached)")
-            return self._cached_threshold
-
+        """Measure ambient noise level for adaptive threshold"""
         samples = int(duration * self.RATE / self.CHUNK)
         rms_values = []
 
@@ -554,13 +546,8 @@ class VoiceDaemon:
 
         if rms_values:
             avg_noise = sum(rms_values) / len(rms_values)
-            threshold = max(100, int(avg_noise * 2.5))
-        else:
-            threshold = self.SILENCE_THRESHOLD
-
-        self._cached_threshold = threshold
-        self._threshold_timestamp = now
-        return threshold
+            return max(100, int(avg_noise * 2.5))
+        return self.SILENCE_THRESHOLD
 
     def record_audio(self):
         """Record audio until silence is detected"""
