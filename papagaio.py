@@ -9,7 +9,6 @@ import os
 import signal
 import threading
 import time
-import wave
 import platform
 import shutil
 
@@ -132,7 +131,7 @@ SILENCE_THRESHOLD_RMS = 200  # Lower threshold for better detection
 SILENCE_DURATION_SECONDS = 2.0  # 2 seconds of silence to stop (was 60 min!)
 MAX_RECORDING_DURATION_SECONDS = 3600
 MIN_VALID_TRANSCRIPTION_LENGTH = 3
-TYPING_DELAY_SECONDS = 0.1  # Faster typing
+TYPING_DELAY_SECONDS = 0.03  # Minimal delay before typing
 MIN_RECORDING_DURATION_SECONDS = 0.3  # Shorter minimum
 CALIBRATION_DURATION_SECONDS = 0.5  # Time to calibrate ambient noise
 
@@ -207,6 +206,13 @@ class VoiceDaemon:
         self._stop_listener = False
         self._target_window_id = None
         self._typing_in_progress = False
+
+        # Cache tool availability (avoids repeated PATH lookups)
+        self._has_xdotool = bool(shutil.which("xdotool"))
+        self._has_xclip = bool(shutil.which("xclip"))
+        self._has_wl_copy = bool(shutil.which("wl-copy"))
+        self._has_ydotool = bool(shutil.which("ydotool"))
+        self._has_notify_send = bool(shutil.which("notify-send"))
 
         # Audio settings for VAD
         self.CHUNK = CHUNK_SIZE
@@ -348,7 +354,7 @@ class VoiceDaemon:
 
     def _release_modifiers(self):
         """Release all modifier keys to prevent stuck keys after hotkey activation"""
-        if IS_LINUX and shutil.which("xdotool"):
+        if IS_LINUX and self._has_xdotool:
             try:
                 subprocess.run(
                     ["xdotool", "keyup", "ctrl", "shift", "alt", "super"],
@@ -438,7 +444,7 @@ class VoiceDaemon:
     def _hotkey_thread(self):
         """Run hotkey activation in a separate thread (signal handlers must be fast)"""
         try:
-            time.sleep(0.05)
+            time.sleep(0.02)
             self._release_modifiers()
             self.on_activate()
         except Exception as e:
@@ -529,8 +535,16 @@ class VoiceDaemon:
         # Vectorized RMS calculation (5-10x faster than Python loop)
         return np.sqrt(np.mean(audio_data.astype(np.float32) ** 2))
 
+    _THRESHOLD_CACHE_TTL = 60  # Reuse calibration for 60 seconds
+
     def calibrate_noise_floor(self, stream, duration=0.5):
-        """Measure ambient noise level for adaptive threshold"""
+        """Measure ambient noise level for adaptive threshold (cached)"""
+        now = time.monotonic()
+        if (hasattr(self, '_cached_threshold') and
+                now - self._threshold_timestamp < self._THRESHOLD_CACHE_TTL):
+            print(f"[Papagaio] Threshold: {self._cached_threshold} (cached)")
+            return self._cached_threshold
+
         samples = int(duration * self.RATE / self.CHUNK)
         rms_values = []
 
@@ -540,18 +554,19 @@ class VoiceDaemon:
 
         if rms_values:
             avg_noise = sum(rms_values) / len(rms_values)
-            # Set threshold 2x above noise floor, minimum 100
-            return max(100, int(avg_noise * 2.5))
-        return self.SILENCE_THRESHOLD
+            threshold = max(100, int(avg_noise * 2.5))
+        else:
+            threshold = self.SILENCE_THRESHOLD
+
+        self._cached_threshold = threshold
+        self._threshold_timestamp = now
+        return threshold
 
     def record_audio(self):
         """Record audio until silence is detected"""
         audio = pyaudio.PyAudio()
 
         try:
-            # Get sample width early before stream closes
-            sample_width = audio.get_sample_size(self.FORMAT)
-
             stream = audio.open(
                 format=self.FORMAT,
                 channels=self.CHANNELS,
@@ -625,36 +640,26 @@ class VoiceDaemon:
         if not started_speaking:
             return None
 
-        # Use secure temporary file creation
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
-            output_file = temp_file.name
-
-        with wave.open(output_file, 'wb') as wf:
-            wf.setnchannels(self.CHANNELS)
-            wf.setsampwidth(sample_width)
-            wf.setframerate(self.RATE)
-            wf.writeframes(b''.join(frames))
-
         duration = len(frames) * self.CHUNK / self.RATE
         print(f"[Papagaio] {self.msg('recorded')}: {duration:.1f}s")
 
-        return output_file
+        # Convert raw bytes to float32 numpy array (faster-whisper native format)
+        audio_array = np.frombuffer(b"".join(frames), dtype=np.int16).astype(np.float32) / 32768.0
+        return audio_array
 
-    def transcribe(self, audio_file):
-        """Transcribe audio file to text (optimized for speed)"""
+    def transcribe(self, audio_data):
+        """Transcribe audio data to text (accepts numpy array or file path)"""
         self.initialize_model()
 
         if HAS_CUDA:
-            beam_size = 5
-            best_of = 3
-            condition_on_previous = True
+            beam_size = 2
+            best_of = 1
         else:
-            beam_size = 3
-            best_of = 2
-            condition_on_previous = True
+            beam_size = 1
+            best_of = 1
 
         segments, info = self.model.transcribe(
-            audio_file,
+            audio_data,
             language=self.transcription_language,
             beam_size=beam_size,
             best_of=best_of,
@@ -667,7 +672,7 @@ class VoiceDaemon:
             },
             without_timestamps=True,
             word_timestamps=False,
-            condition_on_previous_text=condition_on_previous
+            condition_on_previous_text=False
         )
 
         detected_lang = info.language
@@ -707,7 +712,7 @@ class VoiceDaemon:
             return False
 
         try:
-            if not shutil.which("ydotool"):
+            if not self._has_ydotool:
                 return False
 
             time.sleep(TYPING_DELAY_SECONDS)
@@ -730,9 +735,9 @@ class VoiceDaemon:
 
         try:
             clipboard_tool = None
-            if IS_LINUX and shutil.which("xclip"):
+            if IS_LINUX and self._has_xclip:
                 clipboard_tool = "xclip"
-            elif IS_LINUX and shutil.which("wl-copy"):
+            elif IS_LINUX and self._has_wl_copy:
                 clipboard_tool = "wl-copy"
 
             if not clipboard_tool:
@@ -751,12 +756,12 @@ class VoiceDaemon:
                     check=True, timeout=5
                 )
 
-            if shutil.which("xdotool"):
+            if self._has_xdotool:
                 subprocess.run(
                     ["xdotool", "key", "ctrl+v"],
                     check=True, timeout=5
                 )
-            elif shutil.which("ydotool"):
+            elif self._has_ydotool:
                 subprocess.run(["ydotool", "key", "29:1", "47:1", "47:0", "29:0"], check=True, timeout=5)
             else:
                 print("[Papagaio] Copied to clipboard, paste manually with Ctrl+V")
@@ -775,12 +780,12 @@ class VoiceDaemon:
             return False
 
         try:
-            if not shutil.which("xdotool"):
+            if not self._has_xdotool:
                 return False
 
             time.sleep(TYPING_DELAY_SECONDS)
 
-            cmd = ["xdotool", "type", "--delay", "10", "--", text]
+            cmd = ["xdotool", "type", "--delay", "2", "--", text]
             subprocess.run(cmd, check=True, timeout=30)
 
             print(f"[Papagaio] Typed (xdotool type): {text[:50]}...")
@@ -809,22 +814,22 @@ class VoiceDaemon:
 
     def _refocus_target_window(self):
         """Refocus the window that was active when hotkey was pressed"""
-        if self._target_window_id and IS_LINUX and shutil.which("xdotool"):
+        if self._target_window_id and IS_LINUX and self._has_xdotool:
             try:
                 subprocess.run(
                     ["xdotool", "windowactivate", self._target_window_id],
                     check=True, timeout=2
                 )
-                time.sleep(0.3)
+                time.sleep(0.05)
                 print(f"[Papagaio] Refocused window {self._target_window_id}")
             except Exception as e:
                 print(f"[Papagaio] Window refocus failed: {e}")
 
     def _press_enter(self):
         """Press Enter key after typing"""
-        if IS_LINUX and shutil.which("xdotool"):
+        if IS_LINUX and self._has_xdotool:
             subprocess.run(["xdotool", "key", "Return"], check=False, timeout=5)
-        elif IS_LINUX and self.use_ydotool and shutil.which("ydotool"):
+        elif IS_LINUX and self.use_ydotool and self._has_ydotool:
             subprocess.run(["ydotool", "key", "28:1", "28:0"], check=False, timeout=5)
         else:
             kb = KeyboardController()
@@ -838,7 +843,7 @@ class VoiceDaemon:
             self._refocus_target_window()
             result = self._type_text_impl(text)
             if self.auto_enter:
-                time.sleep(0.1)
+                time.sleep(0.03)
                 self._press_enter()
                 print("[Papagaio] Auto-enter: pressed Enter", flush=True)
             return result
@@ -933,16 +938,16 @@ class VoiceDaemon:
         return result[0]
 
     def show_notification(self, title, message, urgency="normal"):
-        """Show desktop notification (cross-platform)"""
+        """Show desktop notification (non-blocking, cross-platform)"""
         try:
-            if IS_LINUX and shutil.which("notify-send"):
-                subprocess.run(
+            if IS_LINUX and self._has_notify_send:
+                subprocess.Popen(
                     ["notify-send", "-u", urgency,
                      "-t", "3000",
                      "-h", "string:x-canonical-private-synchronous:papagaio",
                      title, message],
-                    check=False,
-                    timeout=5
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
                 )
             elif HAS_PLYER:
                 plyer_notification.notify(
@@ -991,7 +996,7 @@ class VoiceDaemon:
         self.stop_recording_flag = False
         self.cancel_recording_flag = False
 
-        if IS_LINUX and shutil.which("xdotool"):
+        if IS_LINUX and self._has_xdotool:
             try:
                 result = subprocess.run(
                     ["xdotool", "getactivewindow"],
@@ -1008,16 +1013,15 @@ class VoiceDaemon:
                 # Start ESC listener
                 self.start_esc_listener()
 
-                audio_file = self.record_audio()
+                audio_data = self.record_audio()
 
                 # Stop ESC listener
                 self.stop_esc_listener()
 
-                if audio_file:
+                if audio_data is not None:
                     print("[Papagaio] 🔄 Transcribing...", flush=True)
 
-                    text = self.transcribe(audio_file)
-                    os.unlink(audio_file)
+                    text = self.transcribe(audio_data)
 
                     if text and len(text) > MIN_VALID_TRANSCRIPTION_LENGTH:
                         print(f"[Papagaio] {self.msg('transcribed')}: {text}", flush=True)
@@ -1106,12 +1110,12 @@ class VoiceDaemon:
         # Detect which typing tool to use
         if IS_WINDOWS or IS_MACOS:
             tool_name = "pynput (native)"
-        elif self.use_ydotool and shutil.which("ydotool"):
+        elif self.use_ydotool and self._has_ydotool:
             tool_name = "ydotool (Wayland/X11)"
-        elif shutil.which("xdotool"):
+        elif self._has_xdotool:
             self.use_ydotool = False
             tool_name = "xdotool (X11)"
-        elif shutil.which("ydotool"):
+        elif self._has_ydotool:
             self.use_ydotool = True
             tool_name = "ydotool (Wayland/X11)"
         else:
